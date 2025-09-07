@@ -1,0 +1,90 @@
+{
+  "rice": {
+    "base_fertilizer": "NPK 20-10-10",
+    "dosage_kg_per_ha": 150,
+    "cost_per_kg": 25,
+    "conditions": {
+      "high_n": {
+        "fertilizer": "Urea",
+        "dosage_kg_per_ha": 100,
+        "cost_per_kg": 15
+      },
+      "low_p": {
+        "fertilizer": "DAP",
+        "dosage_kg_per_ha": 75,
+        "cost_per_kg": 30
+      },
+      "low_k": {
+        "fertilizer": "MOP",
+        "dosage_kg_per_ha": 50,
+        "cost_per_kg": 20
+      }
+    }
+  },
+  "wheat": {
+    "base_fertilizer": "NPK 18-12-8",
+    "dosage_kg_per_ha": 120,
+    "cost_per_kg": 28,
+    "conditions": {
+      "high_n": {
+        "fertilizer": "Urea",
+        "dosage_kg_per_ha": 80,
+        "cost_per_kg": 15
+      },
+      "low_p": {
+        "fertilizer": "SSP",
+        "dosage_kg_per_ha": 100,
+        "cost_per_kg": 22
+      },
+      "low_k": {
+        "fertilizer": "MOP",
+        "dosage_kg_per_ha": 40,
+        "cost_per_kg": 20
+      }
+    }
+  },
+  "maize": {
+    "base_fertilizer": "NPK 16-16-16",
+    "dosage_kg_per_ha": 140,
+    "cost_per_kg": 26,
+    "conditions": {
+      "high_n": {
+        "fertilizer": "Urea",
+        "dosage_kg_per_ha": 90,
+        "cost_per_kg": 15
+      },
+      "low_p": {
+        "fertilizer": "DAP",
+        "dosage_kg_per_ha": 80,
+        "cost_per_kg": 30
+      },
+      "low_k": {
+        "fertilizer": "MOP",
+        "dosage_kg_per_ha": 60,
+        "cost_per_kg": 20
+      }
+    }
+  },
+  "cotton": {
+    "base_fertilizer": "NPK 14-14-14",
+    "dosage_kg_per_ha": 160,
+    "cost_per_kg": 24,
+    "conditions": {
+      "high_n": {
+        "fertilizer": "Urea",
+        "dosage_kg_per_ha": 110,
+        "cost_per_kg": 15
+      },
+      "low_p": {
+        "fertilizer": "SSP",
+        "dosage_kg_per_ha": 120,
+        "cost_per_kg": 22
+      },
+      "low_k": {
+        "fertilizer": "MOP",
+        "dosage_kg_per_ha": 70,
+        "cost_per_kg": 20
+      }
+    }
+  }
+}
