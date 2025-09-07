@@ -1,0 +1,10 @@
+{
+  "N": 50,
+  "P": 65,
+  "K": 20,
+  "temperature": 34,
+  "humidity": 50,
+  "ph": 6.5,
+  "rainfall": 800,
+  "area_ha": 2.0
+}

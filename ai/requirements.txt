@@ -1,0 +1,40 @@
+# Core ML and Data Processing
+pandas>=1.5.0
+numpy>=1.21.0
+scikit-learn>=1.3.0
+lightgbm>=4.0.0
+xgboost>=1.7.0
+
+# Explainability
+shap>=0.42.0
+
+# Model Persistence and Configuration
+joblib>=1.3.0
+pyyaml>=6.0
+
+# Web Framework and API (Required for Backend)
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.4.0
+
+# Visualization and Analysis
+matplotlib>=3.6.0
+seaborn>=0.12.0
+
+# Utilities
+tqdm>=4.64.0
+
+# Optional: Jupyter for notebooks
+jupyter>=1.0.0
+ipykernel>=6.0.0
+
+# Development and Testing
+pytest>=7.0.0
+black>=22.0.0
+flake8>=5.0.0
+
+# Additional Python Standard Library (explicit for clarity)
+# argparse - built into Python standard library
+# datetime - built into Python standard library
+# typing - built into Python standard library
+# os, sys, json - built into Python standard library
