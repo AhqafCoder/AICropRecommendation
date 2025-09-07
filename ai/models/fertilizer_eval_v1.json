@@ -1,0 +1,12 @@
+{
+  "version": "v1",
+  "timestamp": "2025-09-03T18:11:16.693322",
+  "method": "hybrid_lookup_ml",
+  "lookup_crops": [
+    "rice",
+    "wheat",
+    "maize",
+    "cotton"
+  ],
+  "has_ml_model": true
+}
