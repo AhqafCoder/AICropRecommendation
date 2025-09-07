@@ -1,0 +1,770 @@
+# Express.js Backend Integration Guide for Crop AI API
+
+## Overview
+This guide provides step-by-step instructions for integrating the Crop AI FastAPI service into an Express.js backend application. This architecture allows your web application to securely access crop recommendations while maintaining separation of concerns.
+
+## Architecture
+```
+Frontend (React/Vue/Angular) → Express.js Backend → Crop AI FastAPI → ML Models
+```
+
+---
+
+## STEP 1: PROJECT SETUP
+
+### 1.1 Initialize Express.js Project
+```bash
+mkdir crop-ai-backend
+cd crop-ai-backend
+npm init -y
+```
+
+### 1.2 Install Dependencies
+```bash
+# Core dependencies
+npm install express cors helmet morgan dotenv
+npm install axios node-cache express-rate-limit
+npm install express-validator joi
+
+# Development dependencies
+npm install -D nodemon concurrently
+```
+
+### 1.3 Project Structure
+```
+crop-ai-backend/
+├── src/
+│   ├── controllers/
+│   │   └── cropController.js
+│   ├── middleware/
+│   │   ├── auth.js
+│   │   ├── validation.js
+│   │   └── rateLimiter.js
+│   ├── routes/
+│   │   └── cropRoutes.js
+│   ├── services/
+│   │   └── cropAiService.js
+│   ├── utils/
+│   │   ├── cache.js
+│   │   └── logger.js
+│   └── app.js
+├── tests/
+├── .env
+├── .gitignore
+├── package.json
+└── server.js
+```
+
+---
+
+## STEP 2: ENVIRONMENT CONFIGURATION
+
+### 2.1 Create .env File
+```env
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# Crop AI API Configuration
+CROP_AI_API_URL=http://localhost:8000
+CROP_AI_API_TIMEOUT=30000
+
+# Security
+JWT_SECRET=your_jwt_secret_here
+API_RATE_LIMIT=100
+
+# Cache Configuration
+CACHE_TTL=300
+```
+
+### 2.2 Create .gitignore
+```
+node_modules/
+.env
+.env.local
+.env.production
+logs/
+*.log
+dist/
+build/
+```
+
+---
+
+## STEP 3: CORE APPLICATION SETUP
+
+### 3.1 Main Application (src/app.js)
+```javascript
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+require('dotenv').config();
+
+const cropRoutes = require('./routes/cropRoutes');
+const { errorHandler } = require('./middleware/errorHandler');
+const rateLimiter = require('./middleware/rateLimiter');
+
+const app = express();
+
+// Security middleware
+app.use(helmet());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+
+// Logging
+app.use(morgan('combined'));
+
+// Rate limiting
+app.use(rateLimiter);
+
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Routes
+app.use('/api/crop', cropRoutes);
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// Error handling
+app.use(errorHandler);
+
+module.exports = app;
+```
+
+### 3.2 Server Entry Point (server.js)
+```javascript
+const app = require('./src/app');
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`🌾 Crop AI Backend running on port ${PORT}`);
+  console.log(`📚 Health check: http://localhost:${PORT}/health`);
+});
+```
+
+---
+
+## STEP 4: CROP AI SERVICE INTEGRATION
+
+### 4.1 Crop AI Service (src/services/cropAiService.js)
+```javascript
+const axios = require('axios');
+const NodeCache = require('node-cache');
+
+class CropAiService {
+  constructor() {
+    this.baseURL = process.env.CROP_AI_API_URL || 'http://localhost:8000';
+    this.timeout = parseInt(process.env.CROP_AI_API_TIMEOUT) || 30000;
+    this.cache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache
+    
+    this.client = axios.create({
+      baseURL: this.baseURL,
+      timeout: this.timeout,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  async healthCheck() {
+    try {
+      const response = await this.client.get('/health');
+      return response.data;
+    } catch (error) {
+      throw new Error(`Crop AI service unavailable: ${error.message}`);
+    }
+  }
+
+  async predictCrop(soilData) {
+    // Create cache key
+    const cacheKey = `crop_prediction_${JSON.stringify(soilData)}`;
+    
+    // Check cache first
+    const cached = this.cache.get(cacheKey);
+    if (cached) {
+      return { ...cached, cached: true };
+    }
+
+    try {
+      const response = await this.client.post('/predict', soilData);
+      const result = response.data;
+      
+      // Cache the result
+      this.cache.set(cacheKey, result);
+      
+      return { ...result, cached: false };
+    } catch (error) {
+      if (error.response) {
+        throw new Error(`Prediction failed: ${error.response.data.detail || error.message}`);
+      }
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
+  async predictBatch(soilDataArray) {
+    if (soilDataArray.length > 100) {
+      throw new Error('Batch size cannot exceed 100 predictions');
+    }
+
+    try {
+      const response = await this.client.post('/predict/batch', soilDataArray);
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw new Error(`Batch prediction failed: ${error.response.data.detail || error.message}`);
+      }
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+}
+
+module.exports = new CropAiService();
+```
+
+---
+
+## STEP 5: MIDDLEWARE SETUP
+
+### 5.1 Rate Limiter (src/middleware/rateLimiter.js)
+```javascript
+const rateLimit = require('express-rate-limit');
+
+const rateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.API_RATE_LIMIT || 100,
+  message: {
+    error: 'Too many requests',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+module.exports = rateLimiter;
+```
+
+### 5.2 Input Validation (src/middleware/validation.js)
+```javascript
+const Joi = require('joi');
+
+const soilDataSchema = Joi.object({
+  N: Joi.number().min(0).max(200).required(),
+  P: Joi.number().min(0).max(150).required(),
+  K: Joi.number().min(0).max(200).required(),
+  temperature: Joi.number().min(-10).max(55).required(),
+  humidity: Joi.number().min(0).max(100).required(),
+  ph: Joi.number().min(3.5).max(9.0).required(),
+  rainfall: Joi.number().min(0).max(5000).required(),
+  area_ha: Joi.number().min(0.1).max(1000).optional().default(1.0)
+});
+
+const validateSoilData = (req, res, next) => {
+  const { error, value } = soilDataSchema.validate(req.body);
+  
+  if (error) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: error.details.map(d => d.message)
+    });
+  }
+  
+  req.validatedData = value;
+  next();
+};
+
+const validateBatchData = (req, res, next) => {
+  if (!Array.isArray(req.body)) {
+    return res.status(400).json({
+      error: 'Request body must be an array'
+    });
+  }
+
+  if (req.body.length > 100) {
+    return res.status(400).json({
+      error: 'Batch size cannot exceed 100 items'
+    });
+  }
+
+  const errors = [];
+  const validatedData = [];
+
+  req.body.forEach((item, index) => {
+    const { error, value } = soilDataSchema.validate(item);
+    if (error) {
+      errors.push({
+        index,
+        errors: error.details.map(d => d.message)
+      });
+    } else {
+      validatedData.push(value);
+    }
+  });
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      error: 'Validation failed for some items',
+      details: errors
+    });
+  }
+
+  req.validatedData = validatedData;
+  next();
+};
+
+module.exports = {
+  validateSoilData,
+  validateBatchData
+};
+```
+
+### 5.3 Error Handler (src/middleware/errorHandler.js)
+```javascript
+const errorHandler = (err, req, res, next) => {
+  console.error(err.stack);
+
+  // Default error
+  let error = {
+    message: err.message || 'Internal Server Error',
+    status: err.status || 500
+  };
+
+  // Crop AI service errors
+  if (err.message.includes('Crop AI service')) {
+    error.status = 503;
+    error.message = 'Crop recommendation service temporarily unavailable';
+  }
+
+  // Validation errors
+  if (err.name === 'ValidationError') {
+    error.status = 400;
+    error.message = 'Invalid input data';
+  }
+
+  // Network timeout errors
+  if (err.code === 'ECONNABORTED') {
+    error.status = 504;
+    error.message = 'Request timeout - please try again';
+  }
+
+  res.status(error.status).json({
+    error: error.message,
+    timestamp: new Date().toISOString(),
+    path: req.path
+  });
+};
+
+module.exports = { errorHandler };
+```
+
+---
+
+## STEP 6: ROUTES AND CONTROLLERS
+
+### 6.1 Routes (src/routes/cropRoutes.js)
+```javascript
+const express = require('express');
+const router = express.Router();
+const cropController = require('../controllers/cropController');
+const { validateSoilData, validateBatchData } = require('../middleware/validation');
+
+// Single prediction
+router.post('/predict', validateSoilData, cropController.predictCrop);
+
+// Batch prediction
+router.post('/predict/batch', validateBatchData, cropController.predictBatch);
+
+// Service health
+router.get('/health', cropController.healthCheck);
+
+// Get prediction history (if you want to add this feature)
+router.get('/history/:userId', cropController.getPredictionHistory);
+
+module.exports = router;
+```
+
+### 6.2 Controller (src/controllers/cropController.js)
+```javascript
+const cropAiService = require('../services/cropAiService');
+
+class CropController {
+  async predictCrop(req, res, next) {
+    try {
+      const soilData = req.validatedData;
+      
+      // Add user context if available
+      if (req.user) {
+        soilData.userId = req.user.id;
+      }
+
+      const prediction = await cropAiService.predictCrop(soilData);
+      
+      // Log for analytics (optional)
+      console.log(`Prediction made for user ${req.user?.id || 'anonymous'}: ${prediction.recommended_crop}`);
+      
+      res.json({
+        success: true,
+        data: prediction,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async predictBatch(req, res, next) {
+    try {
+      const soilDataArray = req.validatedData;
+      
+      const predictions = await cropAiService.predictBatch(soilDataArray);
+      
+      res.json({
+        success: true,
+        data: predictions,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async healthCheck(req, res, next) {
+    try {
+      const cropAiHealth = await cropAiService.healthCheck();
+      
+      res.json({
+        status: 'healthy',
+        services: {
+          cropAi: cropAiHealth,
+          backend: {
+            status: 'healthy',
+            uptime: process.uptime(),
+            memory: process.memoryUsage()
+          }
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(503).json({
+        status: 'degraded',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+
+  async getPredictionHistory(req, res, next) {
+    try {
+      const { userId } = req.params;
+      
+      // This would typically fetch from a database
+      // For now, return a placeholder response
+      res.json({
+        success: true,
+        data: {
+          userId,
+          predictions: [],
+          message: 'History feature not yet implemented'
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
+module.exports = new CropController();
+```
+
+---
+
+## STEP 7: PACKAGE.JSON SCRIPTS
+
+### 7.1 Update package.json
+```json
+{
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "dev:both": "concurrently \"npm run dev\" \"cd ../crop_ai && python simple_app.py\"",
+    "test": "jest",
+    "lint": "eslint src/",
+    "format": "prettier --write src/"
+  }
+}
+```
+
+---
+
+## STEP 8: TESTING
+
+### 8.1 Manual Testing with curl
+```bash
+# Health check
+curl http://localhost:3000/health
+
+# Crop AI service health
+curl http://localhost:3000/api/crop/health
+
+# Single prediction
+curl -X POST http://localhost:3000/api/crop/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "N": 60,
+    "P": 35,
+    "K": 20,
+    "temperature": 25,
+    "humidity": 70,
+    "ph": 6.5,
+    "rainfall": 800,
+    "area_ha": 2.0
+  }'
+
+# Batch prediction
+curl -X POST http://localhost:3000/api/crop/predict/batch \
+  -H "Content-Type: application/json" \
+  -d '[
+    {
+      "N": 60, "P": 35, "K": 20, "temperature": 25,
+      "humidity": 70, "ph": 6.5, "rainfall": 800, "area_ha": 2.0
+    },
+    {
+      "N": 45, "P": 25, "K": 15, "temperature": 22,
+      "humidity": 75, "ph": 6.2, "rainfall": 600, "area_ha": 3.0
+    }
+  ]'
+```
+
+### 8.2 Frontend Integration Example (React)
+```javascript
+// Frontend service
+class CropService {
+  constructor() {
+    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+  }
+
+  async predictCrop(soilData) {
+    const response = await fetch(`${this.baseURL}/crop/predict`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(soilData)
+    });
+
+    if (!response.ok) {
+      throw new Error('Prediction failed');
+    }
+
+    return response.json();
+  }
+
+  async predictBatch(soilDataArray) {
+    const response = await fetch(`${this.baseURL}/crop/predict/batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(soilDataArray)
+    });
+
+    if (!response.ok) {
+      throw new Error('Batch prediction failed');
+    }
+
+    return response.json();
+  }
+}
+
+export default new CropService();
+```
+
+---
+
+## STEP 9: DEPLOYMENT CONSIDERATIONS
+
+### 9.1 Production Environment Variables
+```env
+NODE_ENV=production
+PORT=3000
+CROP_AI_API_URL=http://crop-ai-service:8000
+JWT_SECRET=your_production_jwt_secret
+API_RATE_LIMIT=1000
+CACHE_TTL=600
+```
+
+### 9.2 Docker Configuration (Dockerfile)
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY src/ ./src/
+COPY server.js ./
+
+EXPOSE 3000
+
+USER node
+
+CMD ["npm", "start"]
+```
+
+### 9.3 Docker Compose (docker-compose.yml)
+```yaml
+version: '3.8'
+
+services:
+  crop-ai-backend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - CROP_AI_API_URL=http://crop-ai-api:8000
+    depends_on:
+      - crop-ai-api
+    restart: unless-stopped
+
+  crop-ai-api:
+    build: ../crop_ai
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+```
+
+---
+
+## STEP 10: MONITORING AND LOGGING
+
+### 10.1 Add Request Logging
+```javascript
+// In app.js, add detailed logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+```
+
+### 10.2 Performance Monitoring
+```javascript
+// Add response time tracking
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`);
+  });
+  
+  next();
+});
+```
+
+---
+
+## STEP 11: SECURITY ENHANCEMENTS
+
+### 11.1 Add Authentication (Optional)
+```javascript
+// src/middleware/auth.js
+const jwt = require('jsonwebtoken');
+
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+module.exports = { authenticateToken };
+```
+
+### 11.2 Input Sanitization
+```javascript
+// Add to validation middleware
+const sanitize = require('sanitize-html');
+
+const sanitizeInput = (req, res, next) => {
+  if (req.body) {
+    Object.keys(req.body).forEach(key => {
+      if (typeof req.body[key] === 'string') {
+        req.body[key] = sanitize(req.body[key]);
+      }
+    });
+  }
+  next();
+};
+```
+
+---
+
+## STEP 12: STARTUP CHECKLIST
+
+### Before Starting Development:
+1. ✅ Ensure Crop AI FastAPI is running on port 8000
+2. ✅ Install all Node.js dependencies
+3. ✅ Configure environment variables
+4. ✅ Test Crop AI service connectivity
+
+### Development Workflow:
+1. Start Crop AI service: `python simple_app.py`
+2. Start Express backend: `npm run dev`
+3. Test endpoints with curl or Postman
+4. Integrate with frontend application
+
+### Production Deployment:
+1. Set production environment variables
+2. Use PM2 or similar process manager
+3. Set up reverse proxy (nginx)
+4. Configure SSL certificates
+5. Set up monitoring and logging
+6. Test all endpoints thoroughly
+
+---
+
+## TROUBLESHOOTING
+
+### Common Issues:
+1. **Connection Refused**: Check if Crop AI service is running
+2. **CORS Errors**: Verify CORS configuration in app.js
+3. **Validation Errors**: Check input data format
+4. **Rate Limiting**: Adjust rate limits for your use case
+5. **Cache Issues**: Clear cache or adjust TTL settings
+
+### Debug Commands:
+```bash
+# Check if Crop AI service is running
+curl http://localhost:8000/health
+
+# Check Express backend health
+curl http://localhost:3000/health
+
+# Test connectivity between services
+curl http://localhost:3000/api/crop/health
+```
+
+This integration provides a robust, scalable, and secure way to integrate your Crop AI system with web applications while maintaining separation of concerns and enabling future enhancements.
