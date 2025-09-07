@@ -1,0 +1,28 @@
+{
+  "recommended_crop": "rice",
+  "confidence": 0.5,
+  "why": [
+    "Low rainfall (13 mm) suggests drought-resistant crops like millet",
+    "Cool temperature (1.7\u00b0C) favors temperate crops",
+    "Acidic soil (pH 0.0) suits acid-tolerant crops"
+  ],
+  "expected_yield_t_per_acre": 4.5,
+  "yield_interval_p10_p90": [
+    3.6,
+    5.4
+  ],
+  "profit_breakdown": {
+    "gross": 198000,
+    "investment": 80500,
+    "net": 117500,
+    "roi": 146.0
+  },
+  "fertilizer_recommendation": {
+    "type": "NPK 20-10-10",
+    "dosage_kg_per_ha": 150,
+    "cost": 4750
+  },
+  "model_version": "crop_model_v1",
+  "timestamp": "2025-09-03T18:40:43.771978",
+  "area_analyzed_ha": 2.0
+}
