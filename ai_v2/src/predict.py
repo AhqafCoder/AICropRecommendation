@@ -23,9 +23,9 @@ try:
     from train_profit import predict_profit, create_cost_tables
     from explain import explain_prediction, create_explanation_summary
 except ImportError as e:
-    print(f"Warning: Some modules not available: {e}")
+    print(f"Warning: New modules not available, using fallback functions")
     # Create fallback functions
-    def engineer_features(df, include_categorical=False):
+    def engineer_features(df, include_categorical=False, region='default'):
         return df
     
     def load_feature_list():

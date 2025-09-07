@@ -312,4 +312,4 @@ async def predict_batch(requests: List[CropPredictionRequest]):
     }
 
 if __name__ == "__main__":
-    uvicorn.run("simple_app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("simple_app:app", host="localhost", port=8000, reload=True)
