@@ -1,0 +1,8 @@
+features:
+- n
+- p
+- k
+- temperature
+- humidity
+- ph
+- rainfall
