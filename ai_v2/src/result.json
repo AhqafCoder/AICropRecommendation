@@ -2,10 +2,10 @@
   "recommended_crop": "rice",
   "confidence": 0.5,
   "why": [
-    "Previous crop wheat considered in soil analysis",
+    "Previous crop wheat moderately depleted soil nutrients",
     "Season analysis: rice is highly suitable for kharif season cultivation",
-    "Moderate rainfall (850 mm) supports diverse crop options",
-    "Optimal temperature (28.0\u00b0C) supports most crop varieties"
+    "Soil nutrients adjusted based on previous crop: N-10, P-5, K-8",
+    "Moderate rainfall (850 mm) supports diverse crop options"
   ],
   "expected_yield_t_per_acre": 4.5,
   "yield_interval_p10_p90": [
@@ -31,14 +31,14 @@
       50.0
     ],
     "adjusted_npk": [
-      60.0,
-      45.0,
-      50.0
+      50.0,
+      40.0,
+      42.0
     ],
     "nutrient_impact": [
-      0.0,
-      0.0,
-      0.0
+      -10.0,
+      -5.0,
+      -8.0
     ]
   },
   "season_analysis": {
@@ -47,7 +47,7 @@
     "season_explanation": "rice is highly suitable for kharif season cultivation"
   },
   "model_version": "crop_model_v2_enhanced",
-  "timestamp": "2025-09-07T17:54:50.395916",
+  "timestamp": "2025-09-08T00:19:26.271887",
   "area_analyzed_ha": 2.5,
   "region": "north_india"
 }
