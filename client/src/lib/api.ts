@@ -1,5 +1,5 @@
-// API service for communicating with the AI backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// API service for communicating with the Express.js backend
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export interface CropPredictionRequest {
   N: number;
@@ -93,7 +93,7 @@ export class CropAIService {
   static async getCropRecommendation(
     data: CropPredictionRequest
   ): Promise<CropPredictionResponse> {
-    return this.makeRequest<CropPredictionResponse>('/predict', {
+    return this.makeRequest<CropPredictionResponse>('/api/crops/predict', {
       method: 'POST',
       body: JSON.stringify(data),
     });

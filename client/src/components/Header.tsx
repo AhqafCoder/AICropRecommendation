@@ -31,12 +31,12 @@ export default function Header() {
     },
     { 
       name: "Analytics", 
-      href: "#analytics",
+      href: "/analytics",
       icon: BarChart3
     },
     { 
       name: "Marketplace", 
-      href: "#marketplace",
+      href: "/marketplace",
       icon: ShoppingCart
     }
   ];
