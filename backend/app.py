@@ -615,12 +615,12 @@ async def predict_crop(data: dict):
 if __name__ == "__main__":
     print("🚀 Starting CropAI Marketplace & Analytics Server...")
     print("📊 Features: Marketplace, Analytics, Weather, Profitability")
-    print("🌐 API Documentation: http://localhost:8001/docs")
+    print("🌐 API Documentation: http://localhost:5000/docs")
     
     uvicorn.run(
         app, 
         host="0.0.0.0", 
-        port=8001,
+        port=5000,
         reload=True,
         log_level="info"
     )

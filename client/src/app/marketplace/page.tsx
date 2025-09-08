@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { MarketplaceService, Product, MarketPrice } from "@/lib/marketplace";
 import { 
   Search, 
   Filter, 
@@ -19,34 +20,9 @@ import {
   ShoppingCart,
   Users,
   Package,
-  DollarSign
+  DollarSign,
+  Loader2
 } from "lucide-react";
-
-interface Product {
-  id: string;
-  name: string;
-  category: 'seeds' | 'fertilizer' | 'equipment' | 'pesticide';
-  price: number;
-  unit: string;
-  seller: string;
-  location: string;
-  rating: number;
-  reviews: number;
-  inStock: boolean;
-  image: string;
-  description: string;
-  priceChange: number; // percentage change
-}
-
-interface MarketPrice {
-  crop: string;
-  currentPrice: number;
-  unit: string;
-  change: number;
-  changePercent: number;
-  market: string;
-  lastUpdated: string;
-}
 
 const sampleProducts: Product[] = [
   {
@@ -151,8 +127,52 @@ const marketPrices: MarketPrice[] = [
 ];
 
 export default function MarketplacePage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [marketPrices, setMarketPrices] = useState<MarketPrice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    loadMarketplaceData();
+  }, []);
+
+  const loadMarketplaceData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [productsData, pricesData] = await Promise.all([
+        MarketplaceService.getProducts(),
+        MarketplaceService.getMarketPrices()
+      ]);
+
+      setProducts(productsData);
+      setMarketPrices(pricesData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load marketplace data');
+      console.error('Error loading marketplace data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    try {
+      setLoading(true);
+      const filters = {
+        search: searchQuery,
+        category: selectedCategory === 'all' ? undefined : selectedCategory
+      };
+      const filteredProducts = await MarketplaceService.getProducts(filters);
+      setProducts(filteredProducts);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Search failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const categories = [
     { id: 'all', name: 'All Products', icon: Package },
@@ -162,12 +182,42 @@ export default function MarketplacePage() {
     { id: 'pesticide', name: 'Pesticides', icon: '🛡️' }
   ];
 
-  const filteredProducts = sampleProducts.filter(product => {
+  const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          product.seller.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  if (loading && products.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p>Loading marketplace...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">Error: {error}</p>
+            <Button onClick={loadMarketplaceData}>Try Again</Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', { 
@@ -244,15 +294,21 @@ export default function MarketplacePage() {
 
         {/* Search and Filter */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              type="text"
-              placeholder="Search products, sellers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex-1 relative flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder="Search products, sellers..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="pl-10"
+              />
+            </div>
+            <Button onClick={handleSearch} disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
+            </Button>
           </div>
           <div className="flex gap-2 overflow-x-auto">
             {categories.map((category) => (
@@ -260,7 +316,11 @@ export default function MarketplacePage() {
                 key={category.id}
                 variant={selectedCategory === category.id ? "default" : "outline"}
                 size="sm"
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => {
+                  setSelectedCategory(category.id);
+                  // Trigger search after category change
+                  setTimeout(handleSearch, 100);
+                }}
                 className="whitespace-nowrap"
               >
                 {typeof category.icon === 'string' ? (

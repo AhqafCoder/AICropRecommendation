@@ -1,5 +1,5 @@
-// API service for communicating with the Express.js backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// API service for communicating with the AI backend for crop recommendations
+const AI_API_BASE_URL = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000';
 
 export interface CropPredictionRequest {
   N: number;
@@ -63,7 +63,7 @@ export class CropAIService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const url = `${AI_API_BASE_URL}${endpoint}`;
     
     const defaultOptions: RequestInit = {
       headers: {
@@ -85,7 +85,7 @@ export class CropAIService {
 
       return await response.json();
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('AI API request failed:', error);
       throw error;
     }
   }
@@ -93,7 +93,7 @@ export class CropAIService {
   static async getCropRecommendation(
     data: CropPredictionRequest
   ): Promise<CropPredictionResponse> {
-    return this.makeRequest<CropPredictionResponse>('/api/crops/predict', {
+    return this.makeRequest<CropPredictionResponse>('/predict', {
       method: 'POST',
       body: JSON.stringify(data),
     });

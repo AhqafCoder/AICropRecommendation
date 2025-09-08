@@ -1,5 +1,5 @@
-// Marketplace API service
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// Marketplace API service - communicates with main backend server
+const MARKETPLACE_API_BASE_URL = process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || 'http://localhost:5000';
 
 export interface Product {
   id: string;
@@ -58,7 +58,7 @@ export class MarketplaceService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const url = `${MARKETPLACE_API_BASE_URL}${endpoint}`;
     
     const defaultOptions: RequestInit = {
       headers: {
@@ -101,23 +101,26 @@ export class MarketplaceService {
       }
     });
 
-    const endpoint = `/api/marketplace/products${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    return this.makeRequest<Product[]>(endpoint);
+    const endpoint = `/marketplace/products${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await this.makeRequest<{ products: Product[] }>(endpoint);
+    return response.products;
   }
 
   // Get current market prices
   static async getMarketPrices(): Promise<MarketPrice[]> {
-    return this.makeRequest<MarketPrice[]>('/api/marketplace/prices');
+    const response = await this.makeRequest<{ prices: MarketPrice[] }>('/marketplace/prices');
+    return response.prices;
   }
 
   // Get market insights for analytics
   static async getMarketInsights(): Promise<MarketInsight[]> {
-    return this.makeRequest<MarketInsight[]>('/api/marketplace/insights');
+    const response = await this.makeRequest<{ insights: MarketInsight[] }>('/analytics/insights');
+    return response.insights;
   }
 
   // Place an order
   static async placeOrder(orderRequest: OrderRequest): Promise<{ orderId: string; status: string }> {
-    return this.makeRequest<{ orderId: string; status: string }>('/api/marketplace/orders', {
+    return this.makeRequest<{ orderId: string; status: string }>('/marketplace/orders', {
       method: 'POST',
       body: JSON.stringify(orderRequest),
     });
