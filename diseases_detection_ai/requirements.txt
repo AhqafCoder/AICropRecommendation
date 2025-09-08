@@ -1,0 +1,10 @@
+requests
+Pillow
+numpy
+matplotlib
+scikit-learn
+fastapi
+uvicorn
+python-multipart
+opencv-python
+seaborn
