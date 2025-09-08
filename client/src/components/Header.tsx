@@ -20,23 +20,23 @@ export default function Header() {
 
   const navigationItems = [
     { 
-      name: "Features", 
-      href: "#features",
+      name: "Recommend", 
+      href: "/recommend",
       icon: Brain
     },
     { 
       name: "Detection", 
-      href: "#detection",
+      href: "/detection",
       icon: Camera
     },
     { 
       name: "Analytics", 
-      href: "#analytics",
+      href: "/analytics",
       icon: BarChart3
     },
     { 
       name: "Marketplace", 
-      href: "#marketplace",
+      href: "/marketplace",
       icon: ShoppingCart
     }
   ];
