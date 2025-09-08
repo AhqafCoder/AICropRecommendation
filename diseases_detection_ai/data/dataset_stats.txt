@@ -1,0 +1,110 @@
+Dataset Organization Statistics
+========================================
+
+Corn___Cercospora_leaf_spot_Gray_leaf_spot:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Corn___Common_rust:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Corn___Northern_Leaf_Blight:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Corn___healthy:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Potato___Early_Blight:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Potato___Late_Blight:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Potato___healthy:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Tomato___Bacterial_spot:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Tomato___Early_blight:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Tomato___Late_blight:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Tomato___Leaf_Mold:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Tomato___Septoria_leaf_spot:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Tomato___Spider_mites_Two_spotted_spider_mite:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Tomato___Target_Spot:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Tomato___Tomato_Yellow_Leaf_Curl_Virus:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Tomato___Tomato_mosaic_virus:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Tomato___healthy:
+  Total: 5
+  Train: 3
+  Val: 1
+  Test: 1
+
+Summary:
+Total images: 85
+Training: 51 (60.0%)
+Validation: 17 (20.0%)
+Test: 17 (20.0%)

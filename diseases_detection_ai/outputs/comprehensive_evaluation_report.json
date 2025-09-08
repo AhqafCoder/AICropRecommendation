@@ -1,0 +1,67 @@
+{
+  "evaluation_summary": {
+    "report_generated": "2025-09-08T14:49:18.192053",
+    "models_evaluated": [
+      "V1_Baseline",
+      "V2_Enhanced"
+    ],
+    "dataset_characteristics": {
+      "total_classes": 17,
+      "class_distribution": "Balanced (3 samples per class in test set)",
+      "data_challenges": [
+        "Small dataset size (255 total samples)",
+        "Limited samples per class",
+        "Potential class imbalance in training"
+      ]
+    }
+  },
+  "performance_analysis": {
+    "V1": {
+      "final_validation_accuracy": 0.11764705882352941,
+      "best_validation_accuracy": 0.11764705882352941,
+      "final_training_accuracy": 0.1111111111111111,
+      "total_epochs": 20,
+      "overfitting_indicator": -0.006535947712418305
+    },
+    "V2": {
+      "final_validation_accuracy": 0.11764705882352941,
+      "best_validation_accuracy": 0.11764705882352941,
+      "test_accuracy": 0.11764705882352941,
+      "test_f1_score": 0.03725490196078431,
+      "total_epochs": 20,
+      "dataset_size": 153,
+      "model_improvements": [
+        "Enhanced data augmentation pipeline",
+        "Improved model architecture with BatchNorm",
+        "Label smoothing for better generalization",
+        "AdamW optimizer with weight decay",
+        "Cosine annealing learning rate schedule",
+        "Gradient clipping for training stability",
+        "F1-score based model selection"
+      ]
+    }
+  },
+  "key_findings": [
+    "\u26a0\ufe0f Low test accuracy (11.8%) indicates model struggles with current dataset",
+    "\u26a0\ufe0f Very low F1-score (0.037) suggests poor precision/recall balance",
+    "\ud83c\udfaf 15 classes have zero F1-score, indicating classification difficulties"
+  ],
+  "recommendations": [
+    "\ud83d\udcca Increase dataset size significantly (target: 1000+ samples per class)",
+    "\ud83d\udd04 Implement more aggressive data augmentation techniques",
+    "\u2696\ufe0f Address class imbalance with weighted sampling or SMOTE",
+    "\ud83e\udde0 Consider ensemble methods or different architectures (EfficientNet, Vision Transformer)",
+    "\ud83d\udcc8 Implement progressive resizing and test-time augmentation",
+    "\ud83c\udfaf Use focal loss or class-balanced loss functions",
+    "\ud83d\udd0d Perform detailed error analysis and confusion matrix review",
+    "\ud83d\udcdd Collect more diverse and representative training data"
+  ],
+  "next_steps": [
+    "\ud83d\udd2c Implement Grad-CAM visualization for model interpretability",
+    "\ud83c\udf10 Develop REST API for model deployment",
+    "\ud83d\udcf1 Create user-friendly frontend interface",
+    "\ud83e\uddea Set up continuous model evaluation pipeline",
+    "\ud83d\udcda Build knowledge base with disease information and remedies",
+    "\ud83d\ude80 Deploy model to cloud platform for scalability"
+  ]
+}
