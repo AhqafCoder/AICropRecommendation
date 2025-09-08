@@ -1,19 +1,52 @@
 """
 Crop Disease Detection GUI Application
 User-friendly Tkinter interface for testing the AI model with image uploads
+Enhanced with Grad-CAM visual explanations
 """
 
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 from PIL import Image, ImageTk
-import torch
-import torch.nn.functional as F
-import torchvision.transforms as transforms
 import sys
 import os
 import json
 import threading
+import time
 from pathlib import Path
+
+# Try to import required packages with error handling
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: NumPy not available: {e}")
+    NUMPY_AVAILABLE = False
+
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
+    MATPLOTLIB_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Matplotlib not available: {e}")
+    MATPLOTLIB_AVAILABLE = False
+
+try:
+    import cv2
+    OPENCV_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: OpenCV not available: {e}")
+    OPENCV_AVAILABLE = False
+
+# Try to import PyTorch components with error handling
+try:
+    import torch
+    import torch.nn.functional as F
+    import torchvision.transforms as transforms
+    TORCH_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: PyTorch not available: {e}")
+    print("The GUI will start but model functionality will be limited.")
+    TORCH_AVAILABLE = False
 
 # Add src to path for imports
 sys.path.append('src')
@@ -23,8 +56,8 @@ class CropDiseaseGUI:
     
     def __init__(self, root):
         self.root = root
-        self.root.title("🌱 Crop Disease Detection AI")
-        self.root.geometry("1000x700")
+        self.root.title("🌱 Crop Disease Detection AI with Visual Explanations")
+        self.root.geometry("1400x800")  # Increased width for heatmap display
         self.root.configure(bg='#f0f8ff')
         
         # Initialize variables
@@ -34,6 +67,19 @@ class CropDiseaseGUI:
         self.current_image = None
         self.current_image_path = None
         self.disease_info = {}
+        self.grad_cam = None  # For Grad-CAM explanations
+        
+        # Progress tracking variables
+        self.progress_steps = [
+            "🔄 Initializing analysis...",
+            "🖼️ Processing image...", 
+            "🧠 Running AI prediction...",
+            "🔥 Generating heatmap...",
+            "🎨 Creating overlay...",
+            "📊 Analyzing attention...",
+            "✅ Analysis complete!"
+        ]
+        self.current_step = 0
         
         # Load model and components
         self.load_model_async()
@@ -46,7 +92,29 @@ class CropDiseaseGUI:
         """Load model in background thread"""
         def load_model():
             try:
+                if not TORCH_AVAILABLE:
+                    self.root.after(0, lambda: self.status_label.config(
+                        text="❌ PyTorch not available - Model functionality disabled", 
+                        fg='red'
+                    ))
+                    return
+                
+                if not NUMPY_AVAILABLE:
+                    self.root.after(0, lambda: self.status_label.config(
+                        text="❌ NumPy not available - Model functionality disabled", 
+                        fg='red'
+                    ))
+                    return
+                
                 from src.model import CropDiseaseResNet50
+                
+                # Try to import Grad-CAM with error handling
+                try:
+                    from src.explain import GradCAM
+                    GRADCAM_AVAILABLE = True
+                except ImportError as e:
+                    print(f"Warning: Grad-CAM not available: {e}")
+                    GRADCAM_AVAILABLE = False
                 
                 # Class names
                 self.class_names = [
@@ -71,54 +139,57 @@ class CropDiseaseGUI:
                 
                 self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                 
-                # Try to load trained model
-                model_paths = [
-                    'models/crop_disease_v2_model.pth',
-                    'models/crop_disease_resnet50.pth'
-                ]
+                # Load the specified model
+                model_path = 'models/crop_disease_v2_model.pth'
                 
-                model_loaded = False
-                for model_path in model_paths:
-                    if os.path.exists(model_path):
-                        try:
-                            self.model = CropDiseaseResNet50(num_classes=len(self.class_names), pretrained=False)
-                            checkpoint = torch.load(model_path, map_location=self.device)
-                            
-                            # Handle different checkpoint formats
-                            if isinstance(checkpoint, dict):
-                                if 'model_state_dict' in checkpoint:
-                                    state_dict = checkpoint['model_state_dict']
-                                elif 'state_dict' in checkpoint:
-                                    state_dict = checkpoint['state_dict']
-                                else:
-                                    state_dict = checkpoint
-                            else:
-                                state_dict = checkpoint
-                            
-                            self.model.load_state_dict(state_dict, strict=False)
-                            self.model.to(self.device)
-                            self.model.eval()
-                            model_loaded = True
-                            
-                            # Update status
-                            self.root.after(0, lambda: self.status_label.config(
-                                text=f"✅ Model loaded from {model_path}", 
-                                fg='green'
-                            ))
-                            break
-                            
-                        except Exception as e:
-                            continue
-                
-                if not model_loaded:
-                    # Use pretrained model as fallback
-                    self.model = CropDiseaseResNet50(num_classes=len(self.class_names), pretrained=True)
-                    self.model.to(self.device)
-                    self.model.eval()
-                    
+                if os.path.exists(model_path):
+                    try:
+                        self.model = CropDiseaseResNet50(num_classes=len(self.class_names), pretrained=False)
+                        checkpoint = torch.load(model_path, map_location=self.device)
+                        
+                        # Handle checkpoint format from crop_disease_v2_model.pth
+                        if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+                            state_dict = checkpoint['model_state_dict']
+                            # Also load class names from checkpoint if available
+                            if 'class_names' in checkpoint:
+                                saved_class_names = checkpoint['class_names']
+                                if len(saved_class_names) != len(self.class_names):
+                                    print(f"Warning: Class count mismatch. Saved: {len(saved_class_names)}, Current: {len(self.class_names)}")
+                                self.class_names = saved_class_names  # Use class names from model
+                        elif isinstance(checkpoint, dict) and 'state_dict' in checkpoint:
+                            state_dict = checkpoint['state_dict']
+                        else:
+                            state_dict = checkpoint
+                        
+                        self.model.load_state_dict(state_dict, strict=True)  # Changed to strict=True for better error detection
+                        self.model.to(self.device)
+                        self.model.eval()
+                        
+                        # Initialize Grad-CAM if available
+                        if GRADCAM_AVAILABLE:
+                            from src.explain import GradCAM
+                            self.grad_cam = GradCAM(self.model)
+                            status_msg = f"✅ Model and Grad-CAM loaded from {os.path.basename(model_path)}"
+                        else:
+                            status_msg = f"✅ Model loaded from {os.path.basename(model_path)} (Grad-CAM unavailable)"
+                        
+                        # Update status
+                        self.root.after(0, lambda: self.status_label.config(
+                            text=status_msg, 
+                            fg='green'
+                        ))
+                        
+                    except Exception as e:
+                        error_msg = f"❌ Error loading model: {str(e)}"
+                        self.root.after(0, lambda: self.status_label.config(
+                            text=error_msg, 
+                            fg='red'
+                        ))
+                else:
+                    error_msg = f"❌ Model file not found: {model_path}"
                     self.root.after(0, lambda: self.status_label.config(
-                        text="⚠️ Using pretrained model (no trained weights found)", 
-                        fg='orange'
+                        text=error_msg, 
+                        fg='red'
                     ))
                 
                 # Enable predict button
@@ -132,6 +203,54 @@ class CropDiseaseGUI:
         
         # Start loading in background
         threading.Thread(target=load_model, daemon=True).start()
+    
+    def show_progress(self, step_index=None, message=None):
+        """Show progress indicator with current step"""
+        # Hide heatmap display and show progress
+        self.heatmap_label.pack_forget()
+        self.progress_frame.pack(expand=True)
+        
+        if step_index is not None:
+            self.current_step = step_index
+            if step_index < len(self.progress_steps):
+                message = self.progress_steps[step_index]
+        
+        if message:
+            self.progress_label.config(text=message)
+        
+        # Draw animated progress bar
+        self.draw_progress_animation()
+        self.root.update_idletasks()
+    
+    def hide_progress(self):
+        """Hide progress indicator and show heatmap area"""
+        self.progress_frame.pack_forget()
+        self.heatmap_label.pack(fill='both', expand=True)
+        self.current_step = 0
+    
+    def draw_progress_animation(self):
+        """Draw animated progress indicator"""
+        self.progress_canvas.delete("all")
+        
+        # Draw progress bar background
+        self.progress_canvas.create_rectangle(10, 8, 190, 12, fill='#e0e0e0', outline='')
+        
+        # Calculate progress percentage
+        progress = (self.current_step + 1) / len(self.progress_steps)
+        progress_width = int(180 * progress)
+        
+        # Draw progress bar fill
+        if progress_width > 0:
+            self.progress_canvas.create_rectangle(10, 8, 10 + progress_width, 12, 
+                                                fill='#2e8b57', outline='')
+        
+        # Draw animated dots for current processing
+        import time
+        dot_count = int(time.time() * 3) % 4  # Animated dots
+        dots = "." * dot_count
+        
+        # Update canvas
+        self.root.update_idletasks()
     
     def load_disease_info(self):
         """Load disease information from knowledge base"""
@@ -153,7 +272,7 @@ class CropDiseaseGUI:
         
         title_label = tk.Label(
             title_frame, 
-            text="🌱 Crop Disease Detection AI", 
+            text="🌱 Crop Disease Detection AI with Visual Explanations", 
             font=('Arial', 24, 'bold'),
             bg='#f0f8ff',
             fg='#2e8b57'
@@ -162,7 +281,7 @@ class CropDiseaseGUI:
         
         subtitle_label = tk.Label(
             title_frame,
-            text="Upload a crop leaf image to detect diseases using AI",
+            text="Upload a crop leaf image to detect diseases using AI with Grad-CAM visual explanations",
             font=('Arial', 12),
             bg='#f0f8ff',
             fg='#666666'
@@ -175,7 +294,7 @@ class CropDiseaseGUI:
         
         # Left panel - Image upload and display
         left_frame = tk.Frame(main_frame, bg='white', relief='raised', bd=2)
-        left_frame.pack(side='left', fill='both', expand=True, padx=(0, 10))
+        left_frame.pack(side='left', fill='both', expand=True, padx=(0, 5))
         
         # Image upload section
         upload_frame = tk.Frame(left_frame, bg='white')
@@ -194,9 +313,12 @@ class CropDiseaseGUI:
         )
         upload_button.pack(pady=5)
         
-        # Image display area
+        # Original image display area
+        original_label = tk.Label(left_frame, text="📷 Original Image", font=('Arial', 14, 'bold'), bg='white', fg='#2e8b57')
+        original_label.pack(pady=(5, 0))
+        
         self.image_frame = tk.Frame(left_frame, bg='white')
-        self.image_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        self.image_frame.pack(fill='both', expand=True, padx=10, pady=(5, 10))
         
         self.image_label = tk.Label(
             self.image_frame,
@@ -224,9 +346,61 @@ class CropDiseaseGUI:
         )
         self.predict_button.pack(pady=10)
         
+        # Middle panel - Heatmap visualization
+        middle_frame = tk.Frame(main_frame, bg='white', relief='raised', bd=2)
+        middle_frame.pack(side='left', fill='both', expand=True, padx=5)
+        
+        # Heatmap header
+        heatmap_label = tk.Label(middle_frame, text="🔥 Grad-CAM Heatmap", font=('Arial', 14, 'bold'), bg='white', fg='#2e8b57')
+        heatmap_label.pack(pady=(10, 5))
+        
+        # Heatmap display area
+        self.heatmap_frame = tk.Frame(middle_frame, bg='white')
+        self.heatmap_frame.pack(fill='both', expand=True, padx=10, pady=(5, 10))
+        
+        # Progress indicators (initially hidden)
+        self.progress_frame = tk.Frame(self.heatmap_frame, bg='white')
+        self.progress_frame.pack(expand=True)
+        
+        self.progress_label = tk.Label(
+            self.progress_frame,
+            text="",
+            font=('Arial', 11, 'bold'),
+            bg='white',
+            fg='#2e8b57'
+        )
+        self.progress_label.pack(pady=10)
+        
+        # Canvas for animated progress indicator
+        self.progress_canvas = tk.Canvas(self.progress_frame, width=200, height=20, bg='white', highlightthickness=0)
+        self.progress_canvas.pack(pady=5)
+        
+        # Hide progress frame initially
+        self.progress_frame.pack_forget()
+
+        self.heatmap_label = tk.Label(
+            self.heatmap_frame,
+            text="Visual explanation will appear here\n\nThe heatmap shows which parts of the leaf\nthe AI focuses on for disease detection",
+            font=('Arial', 11),
+            bg='#f9f9f9',
+            fg='#666666',
+            relief='ridge',
+            bd=2
+        )
+        self.heatmap_label.pack(fill='both', expand=True)        # Explanation text
+        explanation_text = tk.Label(
+            middle_frame,
+            text="🎯 Red regions = High attention\n🟡 Yellow regions = Medium attention\n🔵 Blue regions = Low attention",
+            font=('Arial', 9),
+            bg='white',
+            fg='#444444',
+            justify='left'
+        )
+        explanation_text.pack(pady=(0, 10))
+        
         # Right panel - Results
         right_frame = tk.Frame(main_frame, bg='white', relief='raised', bd=2)
-        right_frame.pack(side='right', fill='both', expand=True)
+        right_frame.pack(side='right', fill='both', expand=True, padx=(5, 0))
         
         # Results header
         results_header = tk.Label(
@@ -246,10 +420,12 @@ class CropDiseaseGUI:
         self.results_text = scrolledtext.ScrolledText(
             self.results_frame,
             wrap=tk.WORD,
-            font=('Arial', 11),
+            font=('Arial', 9),
             bg='#f9f9f9',
             relief='sunken',
-            bd=1
+            bd=1,
+            height=25,  # Increased height for better display
+            width=50    # Set width for better text wrapping
         )
         self.results_text.pack(fill='both', expand=True)
         
@@ -259,10 +435,11 @@ class CropDiseaseGUI:
             "📋 Instructions:\n"
             "1. Click 'Select Image' to upload a crop leaf image\n"
             "2. Click 'Analyze Disease' to get AI prediction\n"
-            "3. View detailed results here\n\n"
+            "3. View detailed results and visual explanations\n\n"
             "📊 Supported crops: Corn, Potato, Tomato\n"
             "🔬 AI Model: ResNet50 with transfer learning\n"
-            "🎯 17 disease classes supported\n\n"
+            "🎯 17 disease classes supported\n"
+            "🔥 Visual explanations with Grad-CAM\n\n"
             "Ready to analyze your crop images! 🚀"
         )
         self.results_text.config(state='disabled')
@@ -281,7 +458,16 @@ class CropDiseaseGUI:
         self.status_label.pack(side='left', padx=10, pady=5)
         
         # Device info
-        device_info = f"💻 Device: {'GPU' if torch.cuda.is_available() else 'CPU'}"
+        if TORCH_AVAILABLE and NUMPY_AVAILABLE:
+            device_info = f"💻 Device: {'GPU' if torch.cuda.is_available() else 'CPU'}"
+        else:
+            missing_packages = []
+            if not TORCH_AVAILABLE:
+                missing_packages.append("PyTorch")
+            if not NUMPY_AVAILABLE:
+                missing_packages.append("NumPy")
+            device_info = f"⚠️ Missing: {', '.join(missing_packages)}"
+        
         device_label = tk.Label(
             status_frame,
             text=device_info,
@@ -338,168 +524,359 @@ class CropDiseaseGUI:
                     f"📁 Image loaded: {filename}\n"
                     f"📐 Size: {image.size[0]} x {image.size[1]} pixels\n"
                     f"🎨 Mode: {image.mode}\n\n"
-                    "Click 'Analyze Disease' to get AI prediction! 🔍"
+                    "Click 'Analyze Disease' to get AI prediction and visual explanation! 🔍"
                 )
                 self.results_text.config(state='disabled')
+                
+                # Clear previous heatmap
+                self.heatmap_label.config(
+                    image='',
+                    text="Visual explanation will appear here\n\nThe heatmap shows which parts of the leaf\nthe AI focuses on for disease detection"
+                )
                 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load image:\n{str(e)}")
     
+    def generate_gradcam_heatmap(self, input_tensor, predicted_class_idx):
+        """Generate Grad-CAM heatmap for the predicted class"""
+        try:
+            if self.grad_cam is None:
+                return None
+            
+            # Generate Grad-CAM
+            cam, _, _ = self.grad_cam.generate_cam(input_tensor, predicted_class_idx)
+            return cam
+            
+        except Exception as e:
+            print(f"Error generating Grad-CAM: {e}")
+            return None
+    
+    def create_heatmap_overlay(self, original_image, cam, alpha=0.4):
+        """Create heatmap overlay on original image"""
+        try:
+            if not OPENCV_AVAILABLE or not MATPLOTLIB_AVAILABLE or not NUMPY_AVAILABLE:
+                print("Warning: Required packages not available for heatmap overlay")
+                return original_image
+            
+            # Resize CAM to match original image size
+            original_size = original_image.size
+            cam_resized = cv2.resize(cam, original_size)
+            
+            # Convert to heatmap using jet colormap
+            heatmap = cm.jet(cam_resized)[:, :, :3]  # Remove alpha channel
+            heatmap = (heatmap * 255).astype(np.uint8)
+            
+            # Convert original image to numpy
+            original_np = np.array(original_image)
+            
+            # Ensure both images have the same number of channels
+            if len(original_np.shape) == 3 and original_np.shape[2] == 3:
+                # RGB image
+                overlay = cv2.addWeighted(original_np, 1-alpha, heatmap, alpha, 0)
+            else:
+                # Convert grayscale to RGB if needed
+                if len(original_np.shape) == 2:
+                    original_np = cv2.cvtColor(original_np, cv2.COLOR_GRAY2RGB)
+                overlay = cv2.addWeighted(original_np, 1-alpha, heatmap, alpha, 0)
+            
+            return Image.fromarray(overlay)
+            
+        except Exception as e:
+            print(f"Error creating heatmap overlay: {e}")
+            return original_image
+    
+    def display_heatmap(self, heatmap_image):
+        """Display the heatmap in the GUI"""
+        try:
+            # Resize heatmap for display
+            display_size = (280, 280)
+            heatmap_display = heatmap_image.copy()
+            heatmap_display.thumbnail(display_size, Image.Resampling.LANCZOS)
+            
+            # Convert to PhotoImage
+            heatmap_photo = ImageTk.PhotoImage(heatmap_display)
+            
+            # Update heatmap label
+            self.heatmap_label.config(image=heatmap_photo, text="")
+            self.heatmap_label.image = heatmap_photo  # Keep a reference
+            
+        except Exception as e:
+            print(f"Error displaying heatmap: {e}")
+            self.heatmap_label.config(
+                text=f"Error displaying heatmap:\n{str(e)}",
+                image=''
+            )
+    
+    def predict_disease_threaded(self):
+        """Run prediction in a separate thread to avoid blocking UI"""
+        try:
+            start_time = time.time()
+            
+            # Step 1: Initialize
+            self.root.after(0, lambda: self.show_progress(0))
+            time.sleep(0.5)  # Brief pause for user to see step
+            
+            # Step 2: Process image
+            self.root.after(0, lambda: self.show_progress(1))
+            
+            # Preprocess image
+            img_tensor = self.preprocess_image(self.current_image_path)
+            if img_tensor is None:
+                self.root.after(0, lambda: self.show_error("Failed to preprocess image"))
+                return
+            
+            # Step 3: Run prediction
+            self.root.after(0, lambda: self.show_progress(2))
+            time.sleep(0.3)
+            
+            # Get prediction
+            self.model.eval()
+            with torch.no_grad():
+                outputs = self.model(img_tensor)
+                probabilities = torch.nn.functional.softmax(outputs, dim=1)
+                predicted_idx = torch.argmax(probabilities, dim=1).item()
+                confidence = probabilities[0][predicted_idx].item()
+                
+                predicted_class = self.class_names[predicted_idx]
+            
+            # Step 4: Generate heatmap
+            self.root.after(0, lambda: self.show_progress(3))
+            time.sleep(0.3)
+            
+            # Generate Grad-CAM heatmap
+            try:
+                if self.grad_cam is None:
+                    from src.explain import CropDiseaseExplainer
+                    self.grad_cam = CropDiseaseExplainer(self.model, self.class_names, self.device)
+                
+                # Step 5: Create overlay
+                self.root.after(0, lambda: self.show_progress(4))
+                
+                heatmap_data = self.grad_cam.explain_prediction(
+                    self.current_image_path, 
+                    return_base64=True
+                )
+                
+                if heatmap_data and 'overlay_base64' in heatmap_data:
+                    # Step 6: Analyze attention
+                    self.root.after(0, lambda: self.show_progress(5))
+                    time.sleep(0.2)
+                    
+                    # Decode and display heatmap
+                    import base64
+                    from io import BytesIO
+                    
+                    overlay_data = base64.b64decode(heatmap_data['overlay_base64'])
+                    overlay_image = Image.open(BytesIO(overlay_data))
+                    
+                    # Step 7: Complete
+                    elapsed_time = time.time() - start_time
+                    self.root.after(0, lambda: self.show_progress(6))
+                    time.sleep(0.3)
+                    
+                    # Update UI with results
+                    self.root.after(0, lambda: self.display_results(
+                        predicted_class, confidence, overlay_image, elapsed_time
+                    ))
+                else:
+                    self.root.after(0, lambda: self.display_results(
+                        predicted_class, confidence, None, time.time() - start_time
+                    ))
+                    
+            except Exception as e:
+                print(f"Grad-CAM error: {e}")
+                # Still show prediction without heatmap
+                elapsed_time = time.time() - start_time
+                self.root.after(0, lambda: self.display_results(
+                    predicted_class, confidence, None, elapsed_time
+                ))
+                
+        except Exception as e:
+            error_msg = f"Prediction failed: {str(e)}"
+            print(error_msg)
+            self.root.after(0, lambda: self.show_error(error_msg))
+    
     def predict_disease(self):
-        """Predict disease from uploaded image"""
-        if self.current_image is None:
-            messagebox.showwarning("Warning", "Please select an image first!")
+        """Start prediction process with progress tracking"""
+        if self.current_image_path is None:
+            self.show_error("Please select an image first")
             return
         
         if self.model is None:
-            messagebox.showerror("Error", "AI model is not loaded yet. Please wait.")
+            self.show_error("Model not loaded. Please restart the application.")
             return
         
-        # Update status
-        self.status_label.config(text="🔄 Analyzing image...", fg='blue')
-        self.predict_button.config(state='disabled', text="🔄 Analyzing...")
+        # Clear previous results
+        self.clear_results()
         
-        # Run prediction in background thread
-        def run_prediction():
-            try:
-                # Preprocess image
-                transform = transforms.Compose([
-                    transforms.Resize((224, 224)),
-                    transforms.ToTensor(),
-                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-                ])
-                
-                input_tensor = transform(self.current_image).unsqueeze(0).to(self.device)
-                
-                # Make prediction
-                with torch.no_grad():
-                    outputs = self.model(input_tensor)
-                    probabilities = F.softmax(outputs, dim=1)
-                    confidence, predicted_idx = torch.max(probabilities, 1)
-                    
-                    predicted_class = self.class_names[predicted_idx.item()]
-                    confidence_score = confidence.item()
-                
-                # Get top 3 predictions
-                top_probs, top_indices = torch.topk(probabilities[0], 3)
-                top_predictions = [
-                    (self.class_names[idx], prob.item()) 
-                    for prob, idx in zip(top_probs, top_indices)
-                ]
-                
-                # Parse crop and disease
-                parts = predicted_class.split('___')
-                crop = parts[0] if len(parts) > 0 else "Unknown"
-                disease = parts[1] if len(parts) > 1 else predicted_class
-                
-                # Get disease information
-                disease_details = self.disease_info.get(predicted_class, {})
-                
-                # Calculate risk level
-                if confidence_score >= 0.8:
-                    risk_level = "High" if 'healthy' not in disease.lower() else "Low"
-                    risk_color = "🔴" if risk_level == "High" else "🟢"
-                elif confidence_score >= 0.5:
-                    risk_level = "Medium"
-                    risk_color = "🟡"
-                else:
-                    risk_level = "Low"
-                    risk_color = "🟢"
-                
-                # Update GUI with results
-                self.root.after(0, lambda: self.display_results(
-                    crop, disease, confidence_score, risk_level, risk_color,
-                    top_predictions, disease_details
-                ))
-                
-            except Exception as e:
-                self.root.after(0, lambda: self.handle_prediction_error(str(e)))
-        
-        # Start prediction in background
-        threading.Thread(target=run_prediction, daemon=True).start()
+        # Start prediction in background thread
+        import threading
+        thread = threading.Thread(target=self.predict_disease_threaded)
+        thread.daemon = True
+        thread.start()
     
-    def display_results(self, crop, disease, confidence, risk_level, risk_color, top_predictions, disease_details):
-        """Display prediction results in GUI"""
+    def display_results(self, predicted_class, confidence, heatmap_image=None, elapsed_time=0):
+        """Display prediction results and heatmap"""
+        # Hide progress and show results
+        self.hide_progress()
         
-        # Update results text
-        self.results_text.config(state='normal')
-        self.results_text.delete('1.0', tk.END)
-        
-        # Main prediction
-        results = f"🎯 AI PREDICTION RESULTS\n{'='*40}\n\n"
-        results += f"🌾 Crop: {crop}\n"
-        results += f"🦠 Disease: {disease.replace('_', ' ')}\n"
-        results += f"📊 Confidence: {confidence:.1%}\n"
-        results += f"{risk_color} Risk Level: {risk_level}\n\n"
-        
-        # Top predictions
-        results += f"🏆 TOP 3 PREDICTIONS:\n{'-'*25}\n"
-        for i, (pred_class, prob) in enumerate(top_predictions, 1):
-            parts = pred_class.split('___')
-            crop_name = parts[0]
-            disease_name = parts[1].replace('_', ' ') if len(parts) > 1 else pred_class
-            results += f"{i}. {crop_name} - {disease_name}\n"
-            results += f"   Confidence: {prob:.1%}\n\n"
-        
-        # Disease information
-        if disease_details:
-            results += f"📚 DISEASE INFORMATION:\n{'-'*30}\n"
-            results += f"Description: {disease_details.get('description', 'N/A')}\n\n"
+        # Display heatmap if available
+        if heatmap_image:
+            # Resize heatmap to fit the frame
+            display_size = (400, 300)
+            heatmap_image = heatmap_image.resize(display_size, Image.Resampling.LANCZOS)
+            heatmap_photo = ImageTk.PhotoImage(heatmap_image)
             
-            if 'symptoms' in disease_details:
-                results += f"🔍 Symptoms:\n"
-                for symptom in disease_details['symptoms'][:4]:  # Show first 4 symptoms
-                    results += f"• {symptom}\n"
-                results += "\n"
-            
-            if 'solutions' in disease_details:
-                results += f"💡 Treatment Solutions:\n"
-                for solution in disease_details['solutions'][:4]:  # Show first 4 solutions
-                    results += f"• {solution}\n"
-                results += "\n"
-            
-            if 'prevention' in disease_details:
-                results += f"🛡️ Prevention:\n"
-                for prevention in disease_details['prevention'][:3]:  # Show first 3 prevention methods
-                    results += f"• {prevention}\n"
+            self.heatmap_label.config(
+                image=heatmap_photo,
+                text="",
+                compound='center'
+            )
+            self.heatmap_label.image = heatmap_photo  # Keep reference
         else:
-            results += f"📚 DISEASE INFORMATION:\n{'-'*30}\n"
-            results += "Detailed information not available for this disease.\n"
+            self.heatmap_label.config(
+                image="",
+                text="Heatmap generation failed\n\nPrediction available in results panel →",
+                font=('Arial', 11),
+                bg='#fff3cd',
+                fg='#856404'
+            )
+        
+        # Update prediction results
+        risk_level = self.determine_risk_level(predicted_class)
+        
+        # Update result text
+        result_text = f"🔍 PREDICTION RESULTS\n{'='*40}\n\n"
+        result_text += f"Disease: {predicted_class.replace('___', ' - ')}\n"
+        result_text += f"Confidence: {confidence:.1%}\n"
+        result_text += f"Risk Level: {risk_level}\n\n"
+        
+        # Add timing info
+        result_text += f"⏱️ Analysis completed in {elapsed_time:.2f}s\n"
+        if heatmap_image:
+            result_text += f"✅ Visual explanation generated\n\n"
+        else:
+            result_text += f"⚠️ Visual explanation unavailable\n\n"
+        
+        # Add disease information
+        disease_info = self.disease_info.get(predicted_class, {})
+        if disease_info:
+            result_text += f"ℹ️ DISEASE INFORMATION\n{'='*40}\n\n"
+            
+            if 'description' in disease_info:
+                result_text += f"📋 Description:\n"
+                # Wrap description text to improve readability
+                description = disease_info['description']
+                words = description.split()
+                wrapped_description = ""
+                line_length = 0
+                for word in words:
+                    if line_length + len(word) + 1 > 50:  # Wrap at ~50 characters
+                        wrapped_description += "\n"
+                        line_length = 0
+                    wrapped_description += word + " "
+                    line_length += len(word) + 1
+                result_text += wrapped_description.strip() + "\n\n"
+            
+            if 'symptoms' in disease_info:
+                result_text += f"🔍 Key Symptoms:\n"
+                for i, symptom in enumerate(disease_info['symptoms'][:5], 1):  # Show first 5
+                    result_text += f"{i}. {symptom}\n"
+                result_text += "\n"
+            
+            if 'treatment' in disease_info:
+                result_text += f"💊 Treatment:\n"
+                treatment = disease_info['treatment']
+                words = treatment.split()
+                wrapped_treatment = ""
+                line_length = 0
+                for word in words:
+                    if line_length + len(word) + 1 > 50:
+                        wrapped_treatment += "\n"
+                        line_length = 0
+                    wrapped_treatment += word + " "
+                    line_length += len(word) + 1
+                result_text += wrapped_treatment.strip() + "\n\n"
+                
+            if 'prevention' in disease_info:
+                result_text += f"🛡️ Prevention Tips:\n"
+                for i, prevention in enumerate(disease_info['prevention'][:3], 1):  # Show first 3
+                    result_text += f"{i}. {prevention}\n"
+                result_text += "\n"
+        else:
+            result_text += f"ℹ️ DISEASE INFORMATION\n{'='*40}\n\n"
+            result_text += "Detailed information not available for this disease.\n"
+            result_text += "Please consult agricultural experts for more details.\n\n"
         
         # Add disclaimer
-        results += f"\n⚠️ DISCLAIMER:\n{'-'*15}\n"
-        results += "This AI prediction is for reference only.\n"
-        results += "Please consult agricultural experts for\n"
-        results += "professional diagnosis and treatment advice.\n"
+        result_text += f"⚠️ DISCLAIMER\n{'='*20}\n"
+        result_text += "This AI prediction is for reference only.\n"
+        result_text += "Please consult agricultural experts for\n"
+        result_text += "professional diagnosis and treatment advice."
         
-        self.results_text.insert('1.0', results)
-        self.results_text.config(state='disabled')
+        # Show success message in status bar
+        status_msg = f"✅ Analysis complete! {predicted_class} detected with {confidence:.1%} confidence"
+        self.status_label.config(text=status_msg, fg='#2e8b57')
         
-        # Update status
-        self.status_label.config(
-            text=f"✅ Analysis complete: {disease.replace('_', ' ')} ({confidence:.1%})",
-            fg='green'
-        )
-        
-        # Re-enable predict button
-        self.predict_button.config(state='normal', text="🔍 Analyze Disease")
-    
-    def handle_prediction_error(self, error_msg):
-        """Handle prediction errors"""
+        # Update result display
         self.results_text.config(state='normal')
-        self.results_text.delete('1.0', tk.END)
-        self.results_text.insert('1.0', 
-            f"❌ PREDICTION ERROR\n{'='*25}\n\n"
-            f"An error occurred during analysis:\n{error_msg}\n\n"
-            f"Please try:\n"
-            f"• Selecting a different image\n"
-            f"• Ensuring the image is a clear crop leaf photo\n"
-            f"• Restarting the application\n"
-        )
+        self.results_text.delete(1.0, tk.END)
+        self.results_text.insert(tk.END, result_text)
         self.results_text.config(state='disabled')
+    
+    def show_error(self, message):
+        """Show error message and hide progress"""
+        self.hide_progress()
+        self.status_label.config(text=f"❌ {message}", fg='#dc3545')
         
-        self.status_label.config(text="❌ Analysis failed", fg='red')
-        self.predict_button.config(state='normal', text="🔍 Analyze Disease")
+        # Show error in heatmap area
+        self.heatmap_label.config(
+            image="",
+            text=f"Error occurred:\n\n{message}",
+            font=('Arial', 11),
+            bg='#f8d7da',
+            fg='#721c24'
+        )
+    
+    def clear_results(self):
+        """Clear previous results"""
+        self.results_text.config(state='normal')
+        self.results_text.delete(1.0, tk.END)
+        self.results_text.config(state='disabled')
+        self.status_label.config(text="Ready for analysis...", fg='#666666')
+
+    def determine_risk_level(self, predicted_class):
+        """Determine risk level based on disease prediction"""
+        if 'healthy' in predicted_class.lower():
+            return "🟢 Low Risk - Healthy Plant"
+        elif any(term in predicted_class.lower() for term in ['blight', 'spot', 'rust', 'mold']):
+            return "🔴 High Risk - Disease Detected"
+        else:
+            return "🟡 Medium Risk - Monitor Closely"
+
+    def preprocess_image(self, image_path):
+        """Preprocess image for model prediction"""
+        try:
+            if not TORCH_AVAILABLE:
+                return None
+                
+            import torchvision.transforms as transforms
+            
+            # Load and preprocess image
+            image = Image.open(image_path).convert('RGB')
+            
+            transform = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ])
+            
+            return transform(image).unsqueeze(0).to(self.device)
+            
+        except Exception as e:
+            print(f"Error preprocessing image: {e}")
+            return None
+
 
 def main():
     """Main function to run the GUI application"""
@@ -524,9 +901,13 @@ def main():
     y = (root.winfo_screenheight() // 2) - (height // 2)
     root.geometry(f'{width}x{height}+{x}+{y}')
     
+    # Configure window resizing
+    root.minsize(1200, 600)  # Minimum size for proper display
+    
     # Start GUI event loop
     root.mainloop()
 
 if __name__ == "__main__":
-    print("🚀 Starting Crop Disease Detection GUI...")
+    print("🚀 Starting Crop Disease Detection GUI with Visual Explanations...")
+    print("🔥 Features: AI Disease Detection + Grad-CAM Heatmaps")
     main()

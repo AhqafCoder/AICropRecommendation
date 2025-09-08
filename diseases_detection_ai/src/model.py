@@ -30,14 +30,19 @@ class CropDiseaseResNet50(nn.Module):
             for param in self.resnet.parameters():
                 param.requires_grad = False
         
-        # Replace the final fully connected layer
+        # Replace the final fully connected layer to match saved v2 model architecture
         num_features = self.resnet.fc.in_features
         self.resnet.fc = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(num_features, 512),
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.3),
-            nn.Linear(512, num_classes)
+            nn.Dropout(0.5),                    # 0
+            nn.Linear(num_features, 1024),      # 1
+            nn.BatchNorm1d(1024),               # 2
+            nn.ReLU(inplace=True),              # 3
+            nn.Dropout(0.3),                    # 4
+            nn.Linear(1024, 512),               # 5
+            nn.BatchNorm1d(512),                # 6
+            nn.ReLU(inplace=True),              # 7
+            nn.Dropout(0.2),                    # 8
+            nn.Linear(512, num_classes)         # 9
         )
         
         # Store number of classes
