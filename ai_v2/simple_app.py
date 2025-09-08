@@ -100,7 +100,11 @@ def make_prediction(data: dict) -> dict:
     
     # Enhanced fallback with previous crop and season consideration
     previous_crop = data.get('previous_crop', '')
-    season = data.get('season', 'kharif')
+    season = data.get('season', 'kharif')  # Default to kharif if not provided
+    
+    # Ensure season is never None
+    if season is None or season == '':
+        season = 'kharif'
     
     # Basic crop recommendation logic with season awareness
     if season == 'kharif':
@@ -242,15 +246,15 @@ def make_prediction(data: dict) -> dict:
         },
         # Enhanced fields for fallback
         "previous_crop_analysis": {
-            "previous_crop": previous_crop,
-            "original_npk": [data['N'], data['P'], data['K']],
-            "adjusted_npk": [data['N'], data['P'], data['K']],  # No adjustment in fallback
-            "nutrient_impact": [0, 0, 0]  # No impact calculated in fallback
+            "previous_crop": str(previous_crop) if previous_crop else "",
+            "original_npk": [float(data['N']), float(data['P']), float(data['K'])],
+            "adjusted_npk": [float(data['N']), float(data['P']), float(data['K'])],  # No adjustment in fallback
+            "nutrient_impact": [0.0, 0.0, 0.0]  # No impact calculated in fallback
         },
         "season_analysis": {
-            "detected_season": season,
+            "detected_season": str(season) if season else "kharif",
             "season_suitability": "suitable" if season in ['kharif', 'rabi'] else "moderate",
-            "season_explanation": f"{crop} is recommended for {season} season based on climatic conditions"
+            "season_explanation": f"{crop} is recommended for {season or 'kharif'} season based on climatic conditions"
         },
         "model_version": "rule_based_v2_enhanced",
         "timestamp": datetime.now().isoformat(),
@@ -294,6 +298,161 @@ async def predict_batch(requests: List[CropPredictionRequest]):
     
     results = []
     errors = []
+
+# Marketplace API Endpoints
+@app.get("/marketplace/products")
+async def get_marketplace_products(
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    location: Optional[str] = None
+):
+    """Get marketplace products with optional filtering"""
+    # Sample marketplace data
+    products = [
+        {
+            "id": "1",
+            "name": "Premium Rice Seeds (IR64)",
+            "category": "seeds",
+            "price": 120,
+            "unit": "kg",
+            "seller": "Green Valley Seeds",
+            "location": "Punjab, India",
+            "rating": 4.8,
+            "reviews": 156,
+            "inStock": True,
+            "image": "🌾",
+            "description": "High-yield IR64 rice variety suitable for kharif season",
+            "priceChange": -2.5
+        },
+        {
+            "id": "2",
+            "name": "NPK Fertilizer (20:20:0)",
+            "category": "fertilizer",
+            "price": 850,
+            "unit": "50kg bag",
+            "seller": "FarmTech Solutions",
+            "location": "Maharashtra, India",
+            "rating": 4.6,
+            "reviews": 89,
+            "inStock": True,
+            "image": "🌱",
+            "description": "Balanced NPK fertilizer for optimal crop growth",
+            "priceChange": 3.2
+        },
+        {
+            "id": "3",
+            "name": "Solar Water Pump",
+            "category": "equipment",
+            "price": 45000,
+            "unit": "unit",
+            "seller": "AgriTech India",
+            "location": "Gujarat, India",
+            "rating": 4.9,
+            "reviews": 34,
+            "inStock": True,
+            "image": "⚡",
+            "description": "5HP solar-powered water pump with 2-year warranty",
+            "priceChange": -1.8
+        }
+    ]
+    
+    # Apply filters
+    filtered_products = products
+    
+    if category and category != "all":
+        filtered_products = [p for p in filtered_products if p["category"] == category]
+    
+    if search:
+        search_lower = search.lower()
+        filtered_products = [
+            p for p in filtered_products 
+            if search_lower in p["name"].lower() or search_lower in p["seller"].lower()
+        ]
+    
+    if location:
+        filtered_products = [
+            p for p in filtered_products 
+            if location.lower() in p["location"].lower()
+        ]
+    
+    return filtered_products
+
+@app.get("/marketplace/prices")
+async def get_market_prices():
+    """Get current market prices for major crops"""
+    return [
+        {
+            "crop": "Rice",
+            "currentPrice": 2100,
+            "unit": "quintal",
+            "change": 50,
+            "changePercent": 2.4,
+            "market": "Delhi Mandi",
+            "lastUpdated": "2 hours ago"
+        },
+        {
+            "crop": "Wheat",
+            "currentPrice": 2050,
+            "unit": "quintal",
+            "change": -30,
+            "changePercent": -1.4,
+            "market": "Punjab Mandi",
+            "lastUpdated": "1 hour ago"
+        },
+        {
+            "crop": "Cotton",
+            "currentPrice": 5800,
+            "unit": "quintal",
+            "change": 120,
+            "changePercent": 2.1,
+            "market": "Gujarat Mandi",
+            "lastUpdated": "3 hours ago"
+        }
+    ]
+
+@app.get("/marketplace/insights")
+async def get_market_insights():
+    """Get market insights and analytics data"""
+    return [
+        {
+            "crop": "Rice",
+            "demandTrend": "up",
+            "priceProjection": 2250,
+            "seasonalFactor": 1.15,
+            "riskLevel": "low",
+            "bestRegions": ["Punjab", "Haryana", "West Bengal"],
+            "optimalTiming": "June - July"
+        },
+        {
+            "crop": "Cotton",
+            "demandTrend": "up",
+            "priceProjection": 6200,
+            "seasonalFactor": 1.25,
+            "riskLevel": "medium",
+            "bestRegions": ["Gujarat", "Maharashtra", "Andhra Pradesh"],
+            "optimalTiming": "May - June"
+        }
+    ]
+
+@app.post("/marketplace/orders")
+async def place_order(order_data: dict):
+    """Place a marketplace order"""
+    # Validate order data
+    required_fields = ["productId", "quantity", "deliveryAddress", "contactInfo"]
+    for field in required_fields:
+        if field not in order_data:
+            raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+    
+    # Generate order ID
+    import uuid
+    order_id = str(uuid.uuid4())[:8]
+    
+    return {
+        "orderId": order_id,
+        "status": "confirmed",
+        "estimatedDelivery": "3-5 days",
+        "trackingNumber": f"TRK{order_id.upper()}"
+    }
     
     for i, request in enumerate(requests):
         try:
