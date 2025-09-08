@@ -29,7 +29,7 @@ export default function CropRecommendationForm() {
   const handleInputChange = (field: keyof CropPredictionRequest, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: field === 'previous_crop' || field === 'region' ? value : parseFloat(value) || 0
+      [field]: field === 'previous_crop' || field === 'region' || field === 'season' ? value : parseFloat(value) || 0
     }));
   };
 
