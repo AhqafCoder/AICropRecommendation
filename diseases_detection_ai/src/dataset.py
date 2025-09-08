@@ -10,6 +10,55 @@ from PIL import Image
 import numpy as np
 from pathlib import Path
 
+def get_transforms(split='train', input_size=224):
+    """
+    Get image transforms for different dataset splits
+    
+    Args:
+        split: 'train', 'val', or 'test'
+        input_size: Input image size (default: 224)
+    
+    Returns:
+        transforms.Compose: Composed transforms
+    """
+    if split == 'train':
+        # Training transforms with augmentation
+        return transforms.Compose([
+            transforms.Resize((input_size, input_size)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomVerticalFlip(p=0.3),
+            transforms.RandomRotation(degrees=15),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                               std=[0.229, 0.224, 0.225])
+        ])
+    else:
+        # Validation/test transforms (no augmentation)
+        return transforms.Compose([
+            transforms.Resize((input_size, input_size)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                               std=[0.229, 0.224, 0.225])
+        ])
+
+def get_inference_transforms(input_size=224):
+    """
+    Get transforms for inference (prediction)
+    
+    Args:
+        input_size: Input image size (default: 224)
+    
+    Returns:
+        transforms.Compose: Composed transforms for inference
+    """
+    return transforms.Compose([
+        transforms.Resize((input_size, input_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                           std=[0.229, 0.224, 0.225])
+    ])
+
 class CropDiseaseDataset(Dataset):
     """Custom dataset for crop disease images"""
     
