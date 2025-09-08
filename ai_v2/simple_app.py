@@ -100,7 +100,11 @@ def make_prediction(data: dict) -> dict:
     
     # Enhanced fallback with previous crop and season consideration
     previous_crop = data.get('previous_crop', '')
-    season = data.get('season', 'kharif')
+    season = data.get('season', 'kharif')  # Default to kharif if not provided
+    
+    # Ensure season is never None
+    if season is None or season == '':
+        season = 'kharif'
     
     # Basic crop recommendation logic with season awareness
     if season == 'kharif':
@@ -242,15 +246,15 @@ def make_prediction(data: dict) -> dict:
         },
         # Enhanced fields for fallback
         "previous_crop_analysis": {
-            "previous_crop": previous_crop,
-            "original_npk": [data['N'], data['P'], data['K']],
-            "adjusted_npk": [data['N'], data['P'], data['K']],  # No adjustment in fallback
-            "nutrient_impact": [0, 0, 0]  # No impact calculated in fallback
+            "previous_crop": str(previous_crop) if previous_crop else "",
+            "original_npk": [float(data['N']), float(data['P']), float(data['K'])],
+            "adjusted_npk": [float(data['N']), float(data['P']), float(data['K'])],  # No adjustment in fallback
+            "nutrient_impact": [0.0, 0.0, 0.0]  # No impact calculated in fallback
         },
         "season_analysis": {
-            "detected_season": season,
+            "detected_season": str(season) if season else "kharif",
             "season_suitability": "suitable" if season in ['kharif', 'rabi'] else "moderate",
-            "season_explanation": f"{crop} is recommended for {season} season based on climatic conditions"
+            "season_explanation": f"{crop} is recommended for {season or 'kharif'} season based on climatic conditions"
         },
         "model_version": "rule_based_v2_enhanced",
         "timestamp": datetime.now().isoformat(),
