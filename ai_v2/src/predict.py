@@ -22,9 +22,22 @@ try:
     from train_fertilizer import predict_fertilizer, create_fertilizer_lookup_table
     from train_profit import predict_profit, create_cost_tables
     from explain import explain_prediction, create_explanation_summary
+    from dynamic_recommendations import get_dynamic_fertilizer_prediction, get_dynamic_profit_prediction
+    DYNAMIC_RECOMMENDATIONS_AVAILABLE = True
 except ImportError as e:
-    print(f"Warning: New modules not available, using fallback functions")
-    # Create fallback functions
+    print(f"Warning: Some modules not available ({e}), using enhanced fallback functions")
+    DYNAMIC_RECOMMENDATIONS_AVAILABLE = False
+    
+    # Import dynamic recommendations as fallback
+    try:
+        from dynamic_recommendations import get_dynamic_fertilizer_prediction, get_dynamic_profit_prediction
+        DYNAMIC_RECOMMENDATIONS_AVAILABLE = True
+        print("✅ Dynamic recommendations available as fallback")
+    except ImportError:
+        print("⚠️ Dynamic recommendations not available, using basic fallback")
+        DYNAMIC_RECOMMENDATIONS_AVAILABLE = False
+    
+    # Create enhanced fallback functions
     def engineer_features(df, include_categorical=False, region='default'):
         return df
     
@@ -32,20 +45,28 @@ except ImportError as e:
         return ['n', 'p', 'k', 'temperature', 'humidity', 'ph', 'rainfall']
     
     def predict_fertilizer(crop, n, p, k, ph, **kwargs):
-        return {
-            'fertilizer': 'NPK 15-15-15',
-            'dosage_kg_per_ha': 130,
-            'total_cost': 3000
-        }
+        if DYNAMIC_RECOMMENDATIONS_AVAILABLE:
+            return get_dynamic_fertilizer_prediction(crop, n, p, k, ph, **kwargs)
+        else:
+            return {
+                'fertilizer': 'NPK 15-15-15',
+                'dosage_kg_per_ha': 130,
+                'total_cost': 3000,
+                'method': 'static_fallback'
+            }
     
     def predict_profit(crop, n, p, k, ph, temperature, humidity, rainfall, fertilizer_cost, area_ha=1.0, **kwargs):
-        return {
-            'predicted_yield_quintals_per_ha': 45,
-            'gross_revenue': 180000,
-            'total_investment': 75000,
-            'net_profit': 105000,
-            'roi_percent': 140.0
-        }
+        if DYNAMIC_RECOMMENDATIONS_AVAILABLE:
+            return get_dynamic_profit_prediction(crop, n, p, k, ph, temperature, humidity, rainfall, fertilizer_cost, area_ha, **kwargs)
+        else:
+            return {
+                'predicted_yield_quintals_per_ha': 45,
+                'gross_revenue': 180000,
+                'total_investment': 75000,
+                'net_profit': 105000,
+                'roi_percent': 140.0,
+                'method': 'static_fallback'
+            }
     
     def explain_prediction(model_type, model, X, feature_names, **kwargs):
         return [
@@ -67,6 +88,25 @@ def load_all_models():
         crop_model_file = os.path.join(models_dir, 'crop_model_v1.pkl')
         if os.path.exists(crop_model_file):
             models['crop_model'] = joblib.load(crop_model_file)
+            print("✅ Loaded crop_model_v1.pkl")
+        
+        # Load crop label encoder (use latest version)
+        crop_encoder_file = os.path.join(models_dir, 'label_encoders', 'crop_encoder.pkl')
+        if os.path.exists(crop_encoder_file):
+            models['crop_label_encoder'] = joblib.load(crop_encoder_file)
+            print("✅ Loaded crop_encoder.pkl (latest)")
+        else:
+            # Fallback to old version for backward compatibility
+            crop_encoder_file_old = os.path.join(models_dir, 'crop_label_encoder_v1.pkl')
+            if os.path.exists(crop_encoder_file_old):
+                models['crop_label_encoder'] = joblib.load(crop_encoder_file_old)
+                print("⚠️ Loaded crop_label_encoder_v1.pkl (fallback)")
+        
+        # Load scaler
+        scaler_file = os.path.join(models_dir, 'scaler_v1.pkl')
+        if os.path.exists(scaler_file):
+            models['scaler'] = joblib.load(scaler_file)
+            print("✅ Loaded scaler_v1.pkl")
         
         # Load fertilizer model
         fertilizer_model_file = os.path.join(models_dir, 'fertilizer_model_v1.pkl')
@@ -78,19 +118,18 @@ def load_all_models():
         if os.path.exists(yield_model_file):
             models['yield_model'] = joblib.load(yield_model_file)
         
-        # Load preprocessing artifacts
-        scaler_file = os.path.join(models_dir, 'scaler_v1.pkl')
-        if os.path.exists(scaler_file):
-            models['scaler'] = joblib.load(scaler_file)
-        
-        # Load encoders
+        # Load legacy encoders for backward compatibility (prioritize latest models)
         encoders_dir = os.path.join(models_dir, 'label_encoders')
         if os.path.exists(encoders_dir):
             models['encoders'] = {}
             for file in os.listdir(encoders_dir):
-                if file.endswith('_encoder.pkl'):
-                    name = file.replace('_encoder.pkl', '')
-                    models['encoders'][name] = joblib.load(os.path.join(encoders_dir, file))
+                if file.endswith('.pkl'):
+                    name = file.replace('_encoder.pkl', '').replace('.pkl', '')
+                    try:
+                        models['encoders'][name] = joblib.load(os.path.join(encoders_dir, file))
+                        print(f"✅ Loaded latest encoder: {name}")
+                    except Exception as e:
+                        print(f"⚠️ Failed to load encoder {file}: {e}")
         
         # Load fertilizer encoders
         for encoder_type in ['crop', 'fertilizer']:
@@ -105,10 +144,10 @@ def load_all_models():
         if os.path.exists(profit_encoder_file):
             models['profit_crop_encoder'] = joblib.load(profit_encoder_file)
         
-        print(f"Loaded {len(models)} model artifacts")
+        print(f"✅ Successfully loaded {len(models)} model components")
         
     except Exception as e:
-        print(f"Error loading models: {e}")
+        print(f"❌ Error loading models: {e}")
     
     return models
 
@@ -173,73 +212,74 @@ def validate_input_schema(input_dict: Dict[str, Any]) -> Dict[str, Any]:
 
 def preprocess_input(input_dict: Dict[str, Any], models: Dict) -> Tuple[np.ndarray, list, Dict]:
     """
-    Apply enhanced preprocessing pipeline to input data with previous crop and season support
+    Apply enhanced preprocessing pipeline to input data with proper feature ordering
     """
     # Create DataFrame from input
     df = pd.DataFrame([input_dict])
-    
-    # Apply enhanced feature engineering with region support
-    region = input_dict.get('region', 'default')
-    df_features = engineer_features(df, include_categorical=False, region=region)
     
     # Store preprocessing metadata for explanations
     preprocessing_info = {
         'original_npk': (input_dict['n'], input_dict['p'], input_dict['k']),
         'previous_crop': input_dict.get('previous_crop', ''),
         'season': input_dict.get('season', 'kharif'),
-        'region': region
+        'region': input_dict.get('region', 'default')
     }
     
-    # Add adjusted NPK to preprocessing info if available
-    if all(col in df_features.columns for col in ['n_adjusted', 'p_adjusted', 'k_adjusted']):
-        preprocessing_info['adjusted_npk'] = (
-            df_features['n_adjusted'].iloc[0],
-            df_features['p_adjusted'].iloc[0], 
-            df_features['k_adjusted'].iloc[0]
-        )
-        preprocessing_info['npk_deltas'] = (
-            df_features['n_delta'].iloc[0] if 'n_delta' in df_features.columns else 0,
-            df_features['p_delta'].iloc[0] if 'p_delta' in df_features.columns else 0,
-            df_features['k_delta'].iloc[0] if 'k_delta' in df_features.columns else 0
-        )
+    # Use the exact feature order from training data
+    feature_list = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
     
-    # Get enhanced feature list
-    try:
-        feature_list = load_feature_list()
-        # Add new features to the list if not present
-        new_features = ['season_encoded', 'n_adjusted', 'p_adjusted', 'k_adjusted', 
-                       'has_previous_crop', 'area_log', 'is_kharif', 'is_rabi', 'is_zaid']
-        for feature in new_features:
-            if feature in df_features.columns and feature not in feature_list:
-                feature_list.append(feature)
-    except:
-        # Enhanced fallback feature list
-        feature_list = ['n', 'p', 'k', 'temperature', 'humidity', 'ph', 'rainfall', 
-                       'season_encoded', 'area_log']
-        # Use adjusted NPK if available
-        if 'n_adjusted' in df_features.columns:
-            feature_list = ['n_adjusted', 'p_adjusted', 'k_adjusted', 'temperature', 
-                           'humidity', 'ph', 'rainfall', 'season_encoded', 'area_log']
+    # Map input keys to correct feature names (handle case sensitivity)
+    feature_mapping = {
+        'n': 'N', 'p': 'P', 'k': 'K',
+        'N': 'N', 'P': 'P', 'K': 'K',
+        'temperature': 'temperature',
+        'humidity': 'humidity', 
+        'ph': 'ph',
+        'rainfall': 'rainfall'
+    }
     
-    # Select features that exist in the dataframe
-    available_features = [f for f in feature_list if f in df_features.columns]
-    X = df_features[available_features]
+    # Create feature dataframe with correct column names
+    feature_data = {}
+    for feature in feature_list:
+        # Find the corresponding input key
+        input_key = None
+        for input_k, feature_k in feature_mapping.items():
+            if feature_k == feature and input_k in input_dict:
+                input_key = input_k
+                break
+        
+        if input_key is not None:
+            feature_data[feature] = input_dict[input_key]
+        else:
+            # Set default values if missing
+            defaults = {'N': 50, 'P': 30, 'K': 40, 'temperature': 25, 'humidity': 60, 'ph': 6.5, 'rainfall': 500}
+            feature_data[feature] = defaults.get(feature, 0)
+            print(f"⚠️ Using default value for missing feature {feature}: {feature_data[feature]}")
+    
+    # Create final feature matrix
+    X_df = pd.DataFrame([feature_data])
+    X = X_df[feature_list].values
+    
+    print(f"🔧 Preprocessed features: {dict(zip(feature_list, X[0]))}")
     
     # Apply scaling if scaler is available
     if 'scaler' in models:
         try:
             X_scaled = models['scaler'].transform(X)
-            return X_scaled, available_features, preprocessing_info
-        except:
-            print("Scaling failed, using unscaled features")
+            print("✅ Applied feature scaling")
+            return X_scaled, feature_list, preprocessing_info
+        except Exception as e:
+            print(f"⚠️ Scaling failed: {e}, using unscaled features")
     
-    return X.values, available_features, preprocessing_info
+    print("⚠️ No scaler available, using unscaled features")
+    return X, feature_list, preprocessing_info
 
 def predict_crop(X: np.ndarray, models: Dict) -> Dict[str, Any]:
     """
-    Predict crop recommendation
+    Predict crop recommendation using trained model
     """
     if 'crop_model' not in models:
+        print("⚠️ No crop model found, using fallback")
         return {
             'recommended_crop': 'rice',
             'confidence': 0.5,
@@ -258,26 +298,50 @@ def predict_crop(X: np.ndarray, models: Dict) -> Dict[str, Any]:
             predicted_class = model.predict(X)[0]
             confidence = 0.8  # Default confidence
         
-        # Decode crop name
-        if 'encoders' in models and 'label' in models['encoders']:
+        # Decode crop name using the correct encoder
+        crop_name = 'unknown'
+        if 'crop_label_encoder' in models:
+            # Use the specific crop label encoder
+            crop_name = models['crop_label_encoder'].inverse_transform([predicted_class])[0]
+            print(f"✅ Used crop_label_encoder: {crop_name}")
+        elif 'encoders' in models and 'label' in models['encoders']:
+            # Fallback to legacy encoder
             crop_name = models['encoders']['label'].inverse_transform([predicted_class])[0]
+            print(f"✅ Used legacy label encoder: {crop_name}")
+        elif 'encoders' in models and 'crop' in models['encoders']:
+            # Try crop encoder
+            crop_name = models['encoders']['crop'].inverse_transform([predicted_class])[0]
+            print(f"✅ Used crop encoder: {crop_name}")
         else:
-            # Fallback crop names
-            crop_names = ['rice', 'wheat', 'maize', 'cotton', 'sugarcane']
-            crop_name = crop_names[predicted_class % len(crop_names)]
+            # Ultimate fallback - use class index to map to known crops
+            crop_names = [
+                'apple', 'banana', 'blackgram', 'chickpea', 'coconut', 'coffee', 'cotton',
+                'grapes', 'jute', 'kidneybeans', 'lentil', 'maize', 'mango', 'mothbeans',
+                'mungbean', 'muskmelon', 'orange', 'papaya', 'pigeonpeas', 'pomegranate',
+                'rice', 'watermelon'
+            ]
+            if 0 <= predicted_class < len(crop_names):
+                crop_name = crop_names[predicted_class]
+                print(f"⚠️ Used fallback crop mapping: {crop_name}")
+        
+        print(f"🌾 Predicted: {crop_name} (class: {predicted_class}, confidence: {confidence:.3f})")
         
         return {
             'recommended_crop': crop_name,
             'confidence': confidence,
-            'method': 'ml_model'
+            'method': 'ml_model',
+            'predicted_class': int(predicted_class)
         }
         
     except Exception as e:
-        print(f"Crop prediction failed: {e}")
+        print(f"❌ Crop prediction failed: {e}")
+        import traceback
+        traceback.print_exc()
         return {
             'recommended_crop': 'rice',
             'confidence': 0.5,
-            'method': 'error_fallback'
+            'method': 'error_fallback',
+            'error': str(e)
         }
 
 def predict_from_dict(input_dict: Dict[str, Any]) -> Dict[str, Any]:
@@ -312,33 +376,80 @@ def predict_from_dict(input_dict: Dict[str, Any]) -> Dict[str, Any]:
         npk_for_fertilizer = preprocessing_info.get('adjusted_npk', 
                                                    (validated_input['n'], validated_input['p'], validated_input['k']))
         
-        fertilizer_result = predict_fertilizer(
-            crop=recommended_crop,
-            n=npk_for_fertilizer[0],
-            p=npk_for_fertilizer[1],
-            k=npk_for_fertilizer[2],
-            ph=validated_input['ph'],
-            use_ml=True,
-            ml_model=models.get('fertilizer_model'),
-            encoders=models.get('fertilizer_encoders')
-        )
+        # Use dynamic fertilizer prediction
+        try:
+            if DYNAMIC_RECOMMENDATIONS_AVAILABLE:
+                from dynamic_recommendations import get_dynamic_fertilizer_prediction
+                fertilizer_result = get_dynamic_fertilizer_prediction(
+                    crop=recommended_crop,
+                    n=npk_for_fertilizer[0],
+                    p=npk_for_fertilizer[1],
+                    k=npk_for_fertilizer[2],
+                    ph=validated_input['ph']
+                )
+            else:
+                fertilizer_result = predict_fertilizer(
+                    crop=recommended_crop,
+                    n=npk_for_fertilizer[0],
+                    p=npk_for_fertilizer[1],
+                    k=npk_for_fertilizer[2],
+                    ph=validated_input['ph'],
+                    use_ml=True,
+                    ml_model=models.get('fertilizer_model'),
+                    encoders=models.get('fertilizer_encoders')
+                )
+        except Exception as e:
+            print(f"⚠️ Fertilizer prediction failed: {e}")
+            fertilizer_result = {
+                'fertilizer': 'NPK 15-15-15',
+                'dosage_kg_per_ha': 130,
+                'total_cost': 3000,
+                'method': 'error_fallback'
+            }
         
         # 4. Profit Estimation with adjusted NPK
         fertilizer_cost = fertilizer_result.get('total_cost', 3000)
-        profit_result = predict_profit(
-            crop=recommended_crop,
-            n=npk_for_fertilizer[0],
-            p=npk_for_fertilizer[1],
-            k=npk_for_fertilizer[2],
-            ph=validated_input['ph'],
-            temperature=validated_input['temperature'],
-            humidity=validated_input['humidity'],
-            rainfall=validated_input['rainfall'],
-            fertilizer_cost=fertilizer_cost,
-            area_ha=validated_input['area_ha'],
-            model=models.get('yield_model'),
-            crop_encoder=models.get('profit_crop_encoder')
-        )
+        
+        try:
+            if DYNAMIC_RECOMMENDATIONS_AVAILABLE:
+                from dynamic_recommendations import get_dynamic_profit_prediction
+                profit_result = get_dynamic_profit_prediction(
+                    crop=recommended_crop,
+                    n=npk_for_fertilizer[0],
+                    p=npk_for_fertilizer[1],
+                    k=npk_for_fertilizer[2],
+                    ph=validated_input['ph'],
+                    temperature=validated_input['temperature'],
+                    humidity=validated_input['humidity'],
+                    rainfall=validated_input['rainfall'],
+                    fertilizer_cost=fertilizer_cost,
+                    area_ha=validated_input['area_ha']
+                )
+            else:
+                profit_result = predict_profit(
+                    crop=recommended_crop,
+                    n=npk_for_fertilizer[0],
+                    p=npk_for_fertilizer[1],
+                    k=npk_for_fertilizer[2],
+                    ph=validated_input['ph'],
+                    temperature=validated_input['temperature'],
+                    humidity=validated_input['humidity'],
+                    rainfall=validated_input['rainfall'],
+                    fertilizer_cost=fertilizer_cost,
+                    area_ha=validated_input['area_ha'],
+                    model=models.get('yield_model'),
+                    crop_encoder=models.get('profit_crop_encoder')
+                )
+        except Exception as e:
+            print(f"⚠️ Profit prediction failed: {e}")
+            profit_result = {
+                'predicted_yield_quintals_per_ha': 45,
+                'gross_revenue': 180000,
+                'total_investment': 75000,
+                'net_profit': 105000,
+                'roi_percent': 140.0,
+                'method': 'error_fallback'
+            }
         
         # 5. Generate Enhanced Explanations
         enhanced_explanations = []
@@ -380,6 +491,7 @@ def predict_from_dict(input_dict: Dict[str, Any]) -> Dict[str, Any]:
         response = {
             'recommended_crop': recommended_crop,
             'confidence': round(confidence, 3),
+            'method': crop_result.get('method', 'unknown'),  # Add method from crop prediction
             'why': enhanced_explanations[:4],  # Top 4 enhanced reasons
             'expected_yield_t_per_acre': round(profit_result['predicted_yield_quintals_per_ha'] * 0.1, 2),
             'yield_interval_p10_p90': [

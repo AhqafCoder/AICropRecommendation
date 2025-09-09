@@ -33,6 +33,10 @@ pytest>=7.0.0
 black>=22.0.0
 flake8>=5.0.0
 
+# GUI and Interactive Testing
+streamlit>=1.28.0
+plotly>=5.15.0
+
 # Additional Python Standard Library (explicit for clarity)
 # argparse - built into Python standard library
 # datetime - built into Python standard library
