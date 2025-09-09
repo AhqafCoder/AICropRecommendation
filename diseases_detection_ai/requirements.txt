@@ -1,7 +1,8 @@
 # Core ML dependencies
 torch
 torchvision
-numpy<2.0.0
+numpy
+
 
 # Image processing
 Pillow>=9.0.0
