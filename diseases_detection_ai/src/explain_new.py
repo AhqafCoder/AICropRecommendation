@@ -51,57 +51,16 @@ class CropDiseaseExplainer:
         self.device = device
         
         # Define target layer for Grad-CAM (last convolutional layer)
-        target_layers = []
-        
-        # Try different model architectures
-        if hasattr(model, 'resnet') and hasattr(model.resnet, 'layer4'):
+        if hasattr(model, 'resnet'):
             # For our CropDiseaseResNet50 model
-            target_layers = [model.resnet.layer4[-1]]
-            print(f"Using target layer: model.resnet.layer4[-1]")
-        elif hasattr(model, 'layer4'):
-            # For standard ResNet
-            target_layers = [model.layer4[-1]]
-            print(f"Using target layer: model.layer4[-1]")
+            self.target_layers = [model.resnet.layer4[-1]]
         else:
-            # Try to find the last convolutional layer
-            for name, module in model.named_modules():
-                if isinstance(module, (torch.nn.Conv2d, torch.nn.modules.conv.Conv2d)):
-                    target_layers = [module]
-                    print(f"Using target layer: {name}")
+            # Fallback for standard ResNet
+            self.target_layers = [model.layer4[-1]]
         
-        if not target_layers:
-            print("Warning: Could not find suitable target layer for Grad-CAM")
-            self.grad_cam = None
-            return
-        
-        self.target_layers = target_layers
-        
-        # Initialize Grad-CAM with better error handling
+        # Initialize Grad-CAM
         if PYTORCH_GRAD_CAM_AVAILABLE:
-            try:
-                # Ensure model is in eval mode
-                self.model.eval()
-                
-                # Create a wrapper to fix potential issues
-                class ModelWrapper(torch.nn.Module):
-                    def __init__(self, model):
-                        super().__init__()
-                        self.model = model
-                    
-                    def forward(self, x):
-                        return self.model(x)
-                
-                wrapped_model = ModelWrapper(self.model)
-                
-                self.grad_cam = GradCAM(
-                    model=wrapped_model, 
-                    target_layers=self.target_layers
-                )
-                print("✅ Grad-CAM initialized successfully")
-            except Exception as e:
-                print(f"Error initializing Grad-CAM: {e}")
-                print("Falling back to alternative implementation...")
-                self.grad_cam = None
+            self.grad_cam = GradCAM(model=self.model, target_layers=self.target_layers)
         else:
             self.grad_cam = None
             print("Warning: pytorch-grad-cam not available, Grad-CAM disabled")
@@ -109,7 +68,7 @@ class CropDiseaseExplainer:
     def explain_prediction(self, image_path, save_dir='outputs/heatmaps', 
                           return_base64=False, target_class=None):
         """
-        Generate complete explanation for an image with robust error handling
+        Generate complete explanation for an image
         
         Args:
             image_path: Path to input image
@@ -120,6 +79,8 @@ class CropDiseaseExplainer:
         Returns:
             explanation: Dictionary with prediction and explanation
         """
+        if not PYTORCH_GRAD_CAM_AVAILABLE or self.grad_cam is None:
+            return {'error': 'Grad-CAM not available'}
         
         # Load and preprocess image
         original_image = Image.open(image_path).convert('RGB')
@@ -146,19 +107,23 @@ class CropDiseaseExplainer:
         
         # Use target class if specified, otherwise use predicted class
         target_idx = target_class if target_class is not None else predicted_idx
+        targets = [ClassifierOutputTarget(target_idx)]
         
-        # Try to generate visual explanation
+        # Generate Grad-CAM
         try:
-            if PYTORCH_GRAD_CAM_AVAILABLE and self.grad_cam is not None:
-                # Try pytorch-grad-cam first
-                cam_image = self._generate_pytorch_gradcam(
-                    input_tensor, original_image, target_idx
-                )
-            else:
-                # Use fallback method
-                cam_image = self._generate_simple_attention(
-                    input_tensor, original_image, target_idx
-                )
+            # Resize original image for overlay
+            original_resized = cv2.resize(np.array(original_image), (224, 224))
+            original_resized = original_resized / 255.0
+            
+            # Generate CAM
+            grayscale_cam = self.grad_cam(input_tensor=input_tensor, targets=targets)
+            grayscale_cam = grayscale_cam[0, :]  # Take first (and only) image
+            
+            # Create visualization
+            cam_image = show_cam_on_image(original_resized, grayscale_cam, use_rgb=True)
+            
+            # Convert back to PIL Image
+            cam_pil = Image.fromarray((cam_image * 255).astype(np.uint8))
             
             # Create save directory
             Path(save_dir).mkdir(parents=True, exist_ok=True)
@@ -166,7 +131,7 @@ class CropDiseaseExplainer:
             # Save visualization
             filename = Path(image_path).stem
             save_path = Path(save_dir) / f"{filename}_gradcam.jpg"
-            cam_image.save(save_path)
+            cam_pil.save(save_path)
             
             # Prepare return data
             result = {
@@ -176,13 +141,13 @@ class CropDiseaseExplainer:
                 'target_class': self.class_names[target_idx],
                 'target_idx': target_idx,
                 'save_path': str(save_path),
-                'cam_image': cam_image
+                'cam_image': cam_pil
             }
             
             # Add base64 encoding if requested
             if return_base64:
                 buffer = io.BytesIO()
-                cam_image.save(buffer, format='JPEG')
+                cam_pil.save(buffer, format='JPEG')
                 buffer.seek(0)
                 base64_str = base64.b64encode(buffer.getvalue()).decode()
                 result['overlay_base64'] = base64_str
@@ -190,84 +155,8 @@ class CropDiseaseExplainer:
             return result
             
         except Exception as e:
-            print(f"Error generating explanation: {e}")
-            # Return basic prediction without visual explanation
-            return {
-                'predicted_class': self.class_names[predicted_idx],
-                'predicted_idx': predicted_idx,
-                'confidence': confidence,
-                'target_class': self.class_names[target_idx],
-                'target_idx': target_idx,
-                'error': 'Visual explanation not available',
-                'save_path': '',
-                'cam_image': original_image
-            }
-    
-    def _generate_pytorch_gradcam(self, input_tensor, original_image, target_idx):
-        """Generate Grad-CAM using pytorch-grad-cam library"""
-        targets = [ClassifierOutputTarget(target_idx)]
-        
-        # Resize original image for overlay
-        original_resized = cv2.resize(np.array(original_image), (224, 224))
-        original_resized = original_resized / 255.0
-        
-        # Ensure input tensor requires grad
-        input_tensor.requires_grad_(True)
-        
-        # Generate CAM
-        grayscale_cam = self.grad_cam(input_tensor=input_tensor, targets=targets)
-        
-        if grayscale_cam is None:
-            raise Exception("Grad-CAM returned None")
-        
-        # Ensure we have the right shape
-        if len(grayscale_cam.shape) == 3 and grayscale_cam.shape[0] == 1:
-            grayscale_cam = grayscale_cam[0, :]
-        elif len(grayscale_cam.shape) != 2:
-            grayscale_cam = grayscale_cam.reshape(224, 224)
-        
-        # Create visualization
-        cam_image = show_cam_on_image(original_resized, grayscale_cam, use_rgb=True)
-        
-        # Convert to PIL Image
-        return Image.fromarray((cam_image * 255).astype(np.uint8))
-    
-    def _generate_simple_attention(self, input_tensor, original_image, target_idx):
-        """Generate simple attention map as fallback"""
-        print("Using simple attention fallback method...")
-        
-        # Enable gradients
-        input_tensor.requires_grad_(True)
-        
-        # Forward pass
-        output = self.model(input_tensor)
-        
-        # Get gradient of target class score with respect to input
-        self.model.zero_grad()
-        target_score = output[0, target_idx]
-        target_score.backward()
-        
-        # Get gradients
-        gradients = input_tensor.grad.data
-        
-        # Create simple attention map (average across channels)
-        attention = torch.mean(torch.abs(gradients), dim=1).squeeze()
-        
-        # Normalize to [0, 1]
-        attention = (attention - attention.min()) / (attention.max() - attention.min())
-        
-        # Convert to numpy
-        attention_np = attention.cpu().numpy()
-        
-        # Resize original image
-        original_resized = cv2.resize(np.array(original_image), (224, 224)) / 255.0
-        
-        # Create simple overlay
-        heatmap = cm.jet(attention_np)[:, :, :3]  # Remove alpha channel
-        overlay = 0.7 * original_resized + 0.3 * heatmap
-        
-        # Convert to PIL Image
-        return Image.fromarray((overlay * 255).astype(np.uint8))
+            print(f"Error generating Grad-CAM: {e}")
+            return {'error': str(e)}
 
 def load_model_and_generate_gradcam(model_path, image_path, output_path=None, target_class=None):
     """

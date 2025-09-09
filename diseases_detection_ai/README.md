@@ -5,12 +5,12 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-green.svg)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-An AI-powered crop disease detection system using deep learning to identify diseases in corn, potato, and tomato crops from leaf images. The system provides accurate disease classification, risk assessment, visual explanations, and treatment recommendations.
+An AI-powered crop disease detection system using deep learning to identify diseases in pepper, potato, and tomato crops from leaf images. The system provides accurate disease classification, risk assessment, visual explanations, and treatment recommendations.
 
 ## 🎯 Project Overview
 
 This project implements a comprehensive crop disease detection pipeline that:
-- **Detects 17 different diseases** across corn, potato, and tomato crops
+- **Detects 15 different diseases** across pepper, potato, and tomato crops
 - **Provides visual explanations** using Grad-CAM heatmaps
 - **Offers treatment recommendations** from an integrated knowledge base
 - **Calculates risk levels** based on confidence and environmental factors
@@ -42,6 +42,7 @@ diseases_detection_ai/
 ├── 📂 knowledge_base/          # Disease information
 │   └── disease_info.json      # Symptoms, treatments, prevention
 ├── 📂 models/                  # Trained model weights
+│   ├── crop_disease_v3_model.pth      # Latest V3 model (recommended)
 │   ├── crop_disease_v2_model.pth      # Enhanced V2 model
 │   └── crop_disease_resnet50.pth      # Baseline V1 model
 ├── 📂 notebooks/               # Jupyter notebooks
@@ -122,6 +123,7 @@ pip install -r api/requirements.txt
 
 ### 4. Download Pre-trained Models
 The repository includes pre-trained models:
+- `models/crop_disease_v3_model.pth` - Latest V3 model (recommended)
 - `models/crop_disease_v2_model.pth` - Enhanced V2 model
 - `models/crop_disease_resnet50.pth` - Baseline V1 model
 
@@ -278,7 +280,7 @@ python src/evaluate.py --batch_dir data/test/
 export TORCH_DEVICE=cuda  # or 'cpu'
 
 # Optional: Set model path
-export MODEL_PATH=models/crop_disease_v2_model.pth
+export MODEL_PATH=models/crop_disease_v3_model.pth
 ```
 
 ### API Configuration

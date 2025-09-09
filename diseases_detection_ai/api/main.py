@@ -63,35 +63,33 @@ def load_model_and_components():
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(f"Using device: {device}")
         
-        # Load class names (from dataset or predefined)
+        # Load class names from V3 model checkpoint (updated for Pepper, Potato, Tomato)
         class_names = [
-            'Corn___Cercospora_leaf_spot_Gray_leaf_spot',
-            'Corn___Common_rust',
-            'Corn___healthy',
-            'Corn___Northern_Leaf_Blight',
-            'Potato___Early_Blight',
+            'Pepper__bell___Bacterial_spot',
+            'Pepper__bell___healthy',
+            'Potato___Early_blight',
             'Potato___healthy',
-            'Potato___Late_Blight',
-            'Tomato___Bacterial_spot',
-            'Tomato___Early_blight',
-            'Tomato___healthy',
-            'Tomato___Late_blight',
-            'Tomato___Leaf_Mold',
-            'Tomato___Septoria_leaf_spot',
-            'Tomato___Spider_mites_Two_spotted_spider_mite',
-            'Tomato___Target_Spot',
-            'Tomato___Tomato_mosaic_virus',
-            'Tomato___Tomato_Yellow_Leaf_Curl_Virus'
+            'Potato___Late_blight',
+            'Tomato__Target_Spot',
+            'Tomato__Tomato_mosaic_virus',
+            'Tomato__Tomato_YellowLeaf__Curl_Virus',
+            'Tomato_Bacterial_spot',
+            'Tomato_Early_blight',
+            'Tomato_healthy',
+            'Tomato_Late_blight',
+            'Tomato_Leaf_Mold',
+            'Tomato_Septoria_leaf_spot',
+            'Tomato_Spider_mites_Two_spotted_spider_mite'
         ]
         
         # Load trained model
-        model_path = 'models/crop_disease_v2_model.pth'
+        model_path = 'models/crop_disease_v3_model.pth'
         
         if os.path.exists(model_path):
             model = CropDiseaseResNet50(num_classes=len(class_names), pretrained=False)
             checkpoint = torch.load(model_path, map_location=device)
             
-            # Handle checkpoint format from crop_disease_v2_model.pth
+            # Handle checkpoint format from crop_disease_v3_model.pth
             if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
                 state_dict = checkpoint['model_state_dict']
                 # Use class names from checkpoint if available
@@ -218,10 +216,22 @@ async def predict_disease(
             for i in range(len(class_names))
         }
         
-        # Parse crop and disease from class name
-        parts = predicted_class.split('___')
-        crop = parts[0] if len(parts) > 0 else "Unknown"
-        disease = parts[1] if len(parts) > 1 else predicted_class
+        # Parse crop and disease from class name (improved for V3 model formats)
+        if '___' in predicted_class:
+            parts = predicted_class.split('___')
+            crop = parts[0]
+            disease = parts[1]
+        elif '__' in predicted_class:
+            parts = predicted_class.split('__', 1)  # Split only on first occurrence
+            crop = parts[0]
+            disease = parts[1]
+        elif '_' in predicted_class:
+            parts = predicted_class.split('_', 1)  # Split only on first occurrence
+            crop = parts[0]
+            disease = parts[1]
+        else:
+            crop = "Unknown"
+            disease = predicted_class
         
         # Calculate risk level
         weather_data = None
@@ -242,7 +252,8 @@ async def predict_disease(
             with open('knowledge_base/disease_info.json', 'r') as f:
                 kb_data = json.load(f)
                 for d in kb_data['diseases']:
-                    if f"{d['crop']}___{d['disease']}" == predicted_class:
+                    # Use the class_name field directly instead of constructing it
+                    if d.get('class_name') == predicted_class:
                         disease_info = {
                             'description': d['description'],
                             'symptoms': d['symptoms'],
@@ -398,7 +409,7 @@ async def get_classes():
     return {
         'classes': class_names,
         'total_classes': len(class_names),
-        'crops': ['Corn', 'Potato', 'Tomato']
+        'crops': ['Pepper', 'Potato', 'Tomato']
     }
 
 @app.get("/model_info")
@@ -410,7 +421,7 @@ async def get_model_info():
         'input_size': [3, 224, 224],
         'num_classes': len(class_names),
         'device': str(device),
-        'model_file': 'crop_disease_v2_model.pth',
+        'model_file': 'crop_disease_v3_model.pth',
         'features': {
             'backbone': 'ResNet50 (pretrained)',
             'classifier': 'Custom sequential layers with dropout',

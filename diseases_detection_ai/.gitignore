@@ -23,6 +23,7 @@ MANIFEST
 
 # PyTorch models (keep only the main model)
 models/*.pth
+!models/crop_disease_v3_model.pth
 !models/crop_disease_v2_model.pth
 
 # IDE
