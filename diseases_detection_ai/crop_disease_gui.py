@@ -81,17 +81,23 @@ class CropDiseaseGUI:
         ]
         self.current_step = 0
         
-        # Load model and components
-        self.load_model_async()
+        # Load disease info first
         self.load_disease_info()
         
         # Create GUI
         self.create_widgets()
         
+        # Load model after GUI is created (delayed start)
+        self.root.after(100, self.load_model_async)
+        
     def load_model_async(self):
         """Load model in background thread"""
         def load_model():
             try:
+                # Check if GUI components are initialized
+                if not hasattr(self, 'status_label') or not self.status_label:
+                    return
+                    
                 if not TORCH_AVAILABLE:
                     self.root.after(0, lambda: self.status_label.config(
                         text="❌ PyTorch not available - Model functionality disabled", 
@@ -174,32 +180,38 @@ class CropDiseaseGUI:
                             status_msg = f"✅ Model loaded from {os.path.basename(model_path)} (Grad-CAM unavailable)"
                         
                         # Update status
-                        self.root.after(0, lambda: self.status_label.config(
-                            text=status_msg, 
-                            fg='green'
-                        ))
+                        if hasattr(self, 'status_label') and self.status_label:
+                            self.root.after(0, lambda: self.status_label.config(
+                                text=status_msg, 
+                                fg='green'
+                            ))
                         
                     except Exception as e:
                         error_msg = f"❌ Error loading model: {str(e)}"
+                        if hasattr(self, 'status_label') and self.status_label:
+                            self.root.after(0, lambda: self.status_label.config(
+                                text=error_msg, 
+                                fg='red'
+                            ))
+                else:
+                    error_msg = f"❌ Model file not found: {model_path}"
+                    if hasattr(self, 'status_label') and self.status_label:
                         self.root.after(0, lambda: self.status_label.config(
                             text=error_msg, 
                             fg='red'
                         ))
-                else:
-                    error_msg = f"❌ Model file not found: {model_path}"
-                    self.root.after(0, lambda: self.status_label.config(
-                        text=error_msg, 
-                        fg='red'
-                    ))
                 
                 # Enable predict button
-                self.root.after(0, lambda: self.predict_button.config(state='normal'))
+                if hasattr(self, 'predict_button') and self.predict_button:
+                    self.root.after(0, lambda: self.predict_button.config(state='normal'))
                 
             except Exception as e:
-                self.root.after(0, lambda: self.status_label.config(
-                    text=f"❌ Error loading model: {str(e)}", 
-                    fg='red'
-                ))
+                # Check if GUI components are initialized before updating
+                if hasattr(self, 'status_label') and self.status_label:
+                    self.root.after(0, lambda: self.status_label.config(
+                        text=f"❌ Error loading model: {str(e)}", 
+                        fg='red'
+                    ))
         
         # Start loading in background
         threading.Thread(target=load_model, daemon=True).start()
