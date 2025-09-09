@@ -6,9 +6,9 @@ This MVP (Minimum Viable Product) combines the AI backend from `ai_v2` with a pr
 
 ## 🚀 Live Demo
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
+- **Frontend**:  http://localhost:3000
+- **Backend API**:  http://localhost:8000
+- **API Documentation**:  http://localhost:8000/docs
 
 ## 🎯 MVP Features
 
