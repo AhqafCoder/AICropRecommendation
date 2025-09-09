@@ -86,12 +86,21 @@ def load_model_and_components():
         
         # Load trained model
         model_path = 'models/crop_disease_v2_model.pth'
-        if not os.path.exists(model_path):
-            model_path = 'models/crop_disease_resnet50.pth'
         
         if os.path.exists(model_path):
             model = CropDiseaseResNet50(num_classes=len(class_names), pretrained=False)
-            model.load_state_dict(torch.load(model_path, map_location=device))
+            checkpoint = torch.load(model_path, map_location=device)
+            
+            # Handle checkpoint format from crop_disease_v2_model.pth
+            if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+                state_dict = checkpoint['model_state_dict']
+                # Use class names from checkpoint if available
+                if 'class_names' in checkpoint:
+                    class_names = checkpoint['class_names']
+            else:
+                state_dict = checkpoint
+            
+            model.load_state_dict(state_dict, strict=True)
             model.to(device)
             model.eval()
             print(f"Model loaded from {model_path}")
@@ -246,6 +255,7 @@ async def predict_disease(
         
         # Prepare response
         response = {
+            'predicted_class': predicted_class,
             'crop': crop,
             'disease': disease,
             'confidence': confidence_score,
@@ -269,11 +279,18 @@ async def predict_disease(
                     tmp_path, return_base64=True
                 )
                 
-                response['explanation'] = {
-                    'explanation_image': explanation.get('explanation_image_base64', ''),
-                    'heatmap_analysis': explanation.get('heatmap_regions', {}),
-                    'attention_summary': f"Model focused on {explanation.get('heatmap_regions', {}).get('important_region_ratio', 0):.1%} of the image"
-                }
+                if 'error' in explanation:
+                    response['explanation'] = {
+                        'error': explanation['error'],
+                        'explanation_image': ''
+                    }
+                else:
+                    response['explanation'] = {
+                        'explanation_image': explanation.get('overlay_base64', ''),
+                        'predicted_class': explanation.get('predicted_class', predicted_class),
+                        'confidence': explanation.get('confidence', confidence_score),
+                        'save_path': explanation.get('save_path', '')
+                    }
                 
                 # Clean up temporary file
                 os.unlink(tmp_path)
@@ -382,6 +399,31 @@ async def get_classes():
         'classes': class_names,
         'total_classes': len(class_names),
         'crops': ['Corn', 'Potato', 'Tomato']
+    }
+
+@app.get("/model_info")
+async def get_model_info():
+    """Get model architecture and training information"""
+    return {
+        'model_name': 'CropDiseaseResNet50',
+        'architecture': 'ResNet50 with custom classifier',
+        'input_size': [3, 224, 224],
+        'num_classes': len(class_names),
+        'device': str(device),
+        'model_file': 'crop_disease_v2_model.pth',
+        'features': {
+            'backbone': 'ResNet50 (pretrained)',
+            'classifier': 'Custom sequential layers with dropout',
+            'grad_cam': 'Available for visual explanations',
+            'risk_assessment': 'Multi-factor risk calculation'
+        },
+        'capabilities': [
+            'Disease classification',
+            'Visual explanations (Grad-CAM)',
+            'Risk level assessment',
+            'Treatment recommendations',
+            'Batch processing'
+        ]
     }
 
 @app.get("/disease_info/{crop}/{disease}")
