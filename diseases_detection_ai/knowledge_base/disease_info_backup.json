@@ -1,0 +1,419 @@
+{
+  "diseases": [
+    {
+      "crop": "Corn",
+      "disease": "Cercospora_leaf_spot_Gray_leaf_spot",
+      "description": "Caused by Cercospora zeae-maydis fungus. Creates rectangular gray-brown lesions with yellow halos on leaves. Thrives in warm, humid conditions and can significantly reduce yield.",
+      "symptoms": [
+        "Rectangular gray-brown lesions on leaves",
+        "Yellow halos around spots",
+        "Lesions may merge causing leaf blight",
+        "Premature leaf death"
+      ],
+      "solutions": [
+        "Plant resistant corn varieties",
+        "Apply fungicides containing strobilurins or triazoles",
+        "Rotate crops to break disease cycle",
+        "Ensure proper field drainage",
+        "Remove crop residue after harvest",
+        "Monitor weather conditions for early intervention"
+      ],
+      "prevention": [
+        "Use certified disease-free seeds",
+        "Maintain proper plant spacing for air circulation",
+        "Avoid overhead irrigation",
+        "Apply balanced fertilization"
+      ]
+    },
+    {
+      "crop": "Corn",
+      "disease": "Common_rust",
+      "description": "Caused by Puccinia sorghi fungus. Produces small, oval, cinnamon-brown pustules on both leaf surfaces. Most common in cool, humid weather conditions.",
+      "symptoms": [
+        "Small oval rust-colored pustules on leaves",
+        "Pustules on both upper and lower leaf surfaces",
+        "Yellow halos around pustules",
+        "Premature leaf senescence"
+      ],
+      "solutions": [
+        "Plant rust-resistant corn hybrids",
+        "Apply fungicides if economic threshold is reached",
+        "Monitor fields regularly during cool, humid periods",
+        "Remove volunteer corn plants",
+        "Practice crop rotation"
+      ],
+      "prevention": [
+        "Choose resistant varieties",
+        "Avoid planting in low-lying, humid areas",
+        "Ensure adequate plant nutrition",
+        "Monitor weather forecasts for favorable disease conditions"
+      ]
+    },
+    {
+      "crop": "Corn",
+      "disease": "Northern_Leaf_Blight",
+      "description": "Caused by Exserohilum turcicum fungus. Creates large, elliptical, gray-green lesions on leaves. Favored by moderate temperatures and high humidity.",
+      "symptoms": [
+        "Large elliptical gray-green lesions",
+        "Lesions have distinct margins",
+        "Lesions may girdle the leaf",
+        "Reduced photosynthetic area"
+      ],
+      "solutions": [
+        "Use resistant corn hybrids",
+        "Apply fungicides preventively in high-risk areas",
+        "Implement crop rotation with non-host crops",
+        "Manage crop residue properly",
+        "Ensure balanced nutrition"
+      ],
+      "prevention": [
+        "Select resistant varieties",
+        "Avoid continuous corn cropping",
+        "Maintain proper plant density",
+        "Monitor humidity levels"
+      ]
+    },
+    {
+      "crop": "Corn",
+      "disease": "healthy",
+      "description": "Healthy corn plants show vibrant green leaves without disease symptoms. Proper nutrition and growing conditions support optimal plant health.",
+      "symptoms": [
+        "Vibrant green leaf color",
+        "No visible lesions or spots",
+        "Normal leaf structure and growth",
+        "Good plant vigor"
+      ],
+      "solutions": [
+        "Continue current management practices",
+        "Monitor regularly for early disease detection",
+        "Maintain balanced nutrition program",
+        "Ensure adequate water management"
+      ],
+      "prevention": [
+        "Use certified seeds",
+        "Implement integrated pest management",
+        "Maintain soil health",
+        "Practice crop rotation"
+      ]
+    },
+    {
+      "crop": "Potato",
+      "disease": "Early_Blight",
+      "description": "Caused by Alternaria solani fungus. Creates dark brown spots with concentric rings on leaves. Thrives in warm, humid conditions and can affect tubers.",
+      "symptoms": [
+        "Dark brown spots with concentric rings",
+        "Target-like lesions on leaves",
+        "Yellow halos around spots",
+        "Premature defoliation",
+        "Tuber lesions with dark, sunken areas"
+      ],
+      "solutions": [
+        "Apply fungicides containing chlorothalonil or copper",
+        "Remove infected plant debris",
+        "Ensure proper plant spacing for air circulation",
+        "Avoid overhead irrigation",
+        "Harvest tubers when mature and dry"
+      ],
+      "prevention": [
+        "Plant certified disease-free seed potatoes",
+        "Rotate crops with non-solanaceous plants",
+        "Maintain balanced nutrition",
+        "Avoid water stress"
+      ]
+    },
+    {
+      "crop": "Potato",
+      "disease": "Late_Blight",
+      "description": "Caused by Phytophthora infestans. Most destructive potato disease. Creates water-soaked lesions that turn brown. Spreads rapidly in cool, humid conditions.",
+      "symptoms": [
+        "Water-soaked lesions on leaves",
+        "Brown to black lesions with yellow margins",
+        "White fuzzy growth on leaf undersides",
+        "Rapid plant collapse",
+        "Tuber rot with reddish-brown discoloration"
+      ],
+      "solutions": [
+        "Apply preventive fungicides (metalaxyl, mancozeb)",
+        "Remove infected plants immediately",
+        "Improve field drainage",
+        "Avoid irrigation during humid periods",
+        "Harvest before disease spreads to tubers"
+      ],
+      "prevention": [
+        "Use resistant potato varieties",
+        "Plant certified seed potatoes",
+        "Monitor weather conditions closely",
+        "Implement strict sanitation practices"
+      ]
+    },
+    {
+      "crop": "Potato",
+      "disease": "healthy",
+      "description": "Healthy potato plants display vigorous growth with dark green foliage. Proper cultural practices maintain plant health and maximize yield potential.",
+      "symptoms": [
+        "Dark green, vigorous foliage",
+        "No disease symptoms present",
+        "Normal plant architecture",
+        "Good tuber development"
+      ],
+      "solutions": [
+        "Continue current management practices",
+        "Monitor for early disease symptoms",
+        "Maintain optimal growing conditions",
+        "Implement preventive measures"
+      ],
+      "prevention": [
+        "Use certified seed potatoes",
+        "Practice crop rotation",
+        "Maintain soil health",
+        "Monitor environmental conditions"
+      ]
+    },
+    {
+      "crop": "Tomato",
+      "disease": "Bacterial_spot",
+      "description": "Caused by Xanthomonas species bacteria. Creates small, dark spots on leaves, stems, and fruit. Spreads through water splash and contaminated tools.",
+      "symptoms": [
+        "Small, dark brown to black spots on leaves",
+        "Spots may have yellow halos",
+        "Fruit spots are raised and scab-like",
+        "Severe defoliation in advanced stages"
+      ],
+      "solutions": [
+        "Apply copper-based bactericides",
+        "Remove infected plant material",
+        "Avoid overhead irrigation",
+        "Disinfect tools between plants",
+        "Improve air circulation"
+      ],
+      "prevention": [
+        "Use certified disease-free seeds",
+        "Practice crop rotation",
+        "Avoid working in wet fields",
+        "Maintain proper plant spacing"
+      ]
+    },
+    {
+      "crop": "Tomato",
+      "disease": "Early_blight",
+      "description": "Caused by Alternaria solani fungus. Creates dark spots with concentric rings on lower leaves first. Common in warm, humid conditions.",
+      "symptoms": [
+        "Dark brown spots with concentric rings",
+        "Target-like lesions starting on lower leaves",
+        "Yellow halos around spots",
+        "Progressive upward movement",
+        "Fruit lesions near stem end"
+      ],
+      "solutions": [
+        "Apply fungicides containing chlorothalonil",
+        "Remove lower infected leaves",
+        "Mulch around plants to prevent soil splash",
+        "Ensure adequate plant spacing",
+        "Water at soil level"
+      ],
+      "prevention": [
+        "Use resistant varieties when available",
+        "Rotate crops annually",
+        "Maintain balanced nutrition",
+        "Avoid overhead watering"
+      ]
+    },
+    {
+      "crop": "Tomato",
+      "disease": "Late_blight",
+      "description": "Caused by Phytophthora infestans. Devastating disease that can destroy entire crops quickly. Favored by cool, wet conditions.",
+      "symptoms": [
+        "Water-soaked lesions on leaves",
+        "Brown to black lesions with yellow margins",
+        "White fuzzy growth on leaf undersides",
+        "Rapid plant collapse",
+        "Fruit rot with firm, brown lesions"
+      ],
+      "solutions": [
+        "Apply preventive fungicides immediately",
+        "Remove infected plants completely",
+        "Improve air circulation",
+        "Avoid overhead irrigation",
+        "Harvest green fruit before infection"
+      ],
+      "prevention": [
+        "Use resistant varieties",
+        "Monitor weather conditions",
+        "Ensure good drainage",
+        "Practice strict sanitation"
+      ]
+    },
+    {
+      "crop": "Tomato",
+      "disease": "Leaf_Mold",
+      "description": "Caused by Passalora fulva fungus. Primarily affects greenhouse tomatoes. Creates yellow spots on upper leaf surfaces with fuzzy growth underneath.",
+      "symptoms": [
+        "Yellow spots on upper leaf surfaces",
+        "Olive-green to brown fuzzy growth on undersides",
+        "Spots may merge causing leaf yellowing",
+        "Premature leaf drop"
+      ],
+      "solutions": [
+        "Improve greenhouse ventilation",
+        "Reduce humidity levels",
+        "Apply fungicides if necessary",
+        "Remove infected leaves",
+        "Space plants adequately"
+      ],
+      "prevention": [
+        "Use resistant varieties",
+        "Maintain proper humidity control",
+        "Ensure adequate air circulation",
+        "Avoid overhead watering"
+      ]
+    },
+    {
+      "crop": "Tomato",
+      "disease": "Septoria_leaf_spot",
+      "description": "Caused by Septoria lycopersici fungus. Creates small, circular spots with gray centers and dark borders. Starts on lower leaves and moves upward.",
+      "symptoms": [
+        "Small circular spots with gray centers",
+        "Dark brown to black borders",
+        "Tiny black specks in spot centers",
+        "Progressive upward movement",
+        "Severe defoliation possible"
+      ],
+      "solutions": [
+        "Apply fungicides containing chlorothalonil",
+        "Remove infected lower leaves",
+        "Mulch to prevent soil splash",
+        "Improve air circulation",
+        "Water at soil level"
+      ],
+      "prevention": [
+        "Use certified disease-free seeds",
+        "Practice crop rotation",
+        "Maintain proper plant spacing",
+        "Avoid overhead irrigation"
+      ]
+    },
+    {
+      "crop": "Tomato",
+      "disease": "Spider_mites_Two_spotted_spider_mite",
+      "description": "Caused by Tetranychus urticae. Tiny arachnids that feed on plant sap. Create stippling damage and fine webbing. Thrive in hot, dry conditions.",
+      "symptoms": [
+        "Fine stippling or speckling on leaves",
+        "Yellow or bronze leaf discoloration",
+        "Fine webbing on leaves and stems",
+        "Premature leaf drop",
+        "Reduced plant vigor"
+      ],
+      "solutions": [
+        "Apply miticides or insecticidal soaps",
+        "Increase humidity around plants",
+        "Use predatory mites as biological control",
+        "Remove heavily infested leaves",
+        "Spray with water to dislodge mites"
+      ],
+      "prevention": [
+        "Maintain adequate soil moisture",
+        "Avoid over-fertilization with nitrogen",
+        "Monitor plants regularly",
+        "Encourage beneficial insects"
+      ]
+    },
+    {
+      "crop": "Tomato",
+      "disease": "Target_Spot",
+      "description": "Caused by Corynespora cassiicola fungus. Creates circular spots with concentric rings resembling targets. Affects leaves, stems, and fruit.",
+      "symptoms": [
+        "Circular spots with concentric rings",
+        "Brown to gray centers with dark borders",
+        "Target-like appearance",
+        "Spots on leaves, stems, and fruit",
+        "Premature defoliation"
+      ],
+      "solutions": [
+        "Apply fungicides containing azoxystrobin",
+        "Remove infected plant debris",
+        "Improve air circulation",
+        "Avoid overhead irrigation",
+        "Practice crop rotation"
+      ],
+      "prevention": [
+        "Use resistant varieties when available",
+        "Maintain proper plant spacing",
+        "Ensure good drainage",
+        "Monitor humidity levels"
+      ]
+    },
+    {
+      "crop": "Tomato",
+      "disease": "Tomato_mosaic_virus",
+      "description": "Viral disease causing mosaic patterns on leaves. Transmitted through infected seeds, tools, and handling. No cure available once infected.",
+      "symptoms": [
+        "Mosaic pattern of light and dark green on leaves",
+        "Leaf distortion and curling",
+        "Stunted plant growth",
+        "Reduced fruit quality",
+        "Mottled fruit appearance"
+      ],
+      "solutions": [
+        "Remove infected plants immediately",
+        "Disinfect tools with bleach solution",
+        "Control aphid vectors",
+        "Avoid handling plants when wet",
+        "Use virus-free transplants"
+      ],
+      "prevention": [
+        "Use certified virus-free seeds",
+        "Practice strict sanitation",
+        "Control insect vectors",
+        "Avoid tobacco use around plants"
+      ]
+    },
+    {
+      "crop": "Tomato",
+      "disease": "Tomato_Yellow_Leaf_Curl_Virus",
+      "description": "Viral disease transmitted by whiteflies. Causes severe leaf curling and yellowing. Can devastate tomato crops in warm climates.",
+      "symptoms": [
+        "Severe upward leaf curling",
+        "Yellow leaf margins",
+        "Stunted plant growth",
+        "Reduced fruit set",
+        "Small, poor-quality fruit"
+      ],
+      "solutions": [
+        "Control whitefly populations",
+        "Remove infected plants",
+        "Use reflective mulches",
+        "Apply insecticides for whitefly control",
+        "Use physical barriers"
+      ],
+      "prevention": [
+        "Use resistant varieties",
+        "Control whitefly vectors",
+        "Remove weeds that harbor whiteflies",
+        "Monitor plants regularly"
+      ]
+    },
+    {
+      "crop": "Tomato",
+      "disease": "healthy",
+      "description": "Healthy tomato plants exhibit vigorous growth with dark green foliage and normal fruit development. Proper care maintains optimal plant health.",
+      "symptoms": [
+        "Dark green, vigorous foliage",
+        "Normal leaf shape and size",
+        "Good fruit set and development",
+        "No visible disease symptoms"
+      ],
+      "solutions": [
+        "Continue current management practices",
+        "Monitor for early disease detection",
+        "Maintain optimal growing conditions",
+        "Implement preventive measures"
+      ],
+      "prevention": [
+        "Use certified disease-free seeds",
+        "Practice crop rotation",
+        "Maintain balanced nutrition",
+        "Ensure proper watering practices"
+      ]
+    }
+  ]
+}
