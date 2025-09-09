@@ -1,6 +1,6 @@
 # Crop AI Project - Detailed File Explanation
 
-## Overview
+
 This is an intelligent agricultural recommendation system that uses artificial intelligence to help farmers make better decisions about crop selection, fertilizer usage, and profit estimation. The system analyzes soil conditions, weather data, and other factors to provide personalized recommendations.
 
 ---
