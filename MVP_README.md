@@ -234,7 +234,7 @@ The MVP integrates three types of AI models:
 - **API Docs**: http://localhost:8000/docs
 - **Frontend**: Professional UI with intuitive navigation
 - **Error Handling**: Comprehensive validation and error messages
-- **Responsive**: Works on desktop, tablet, and mobile devices
+- **Responsive**:  Works on desktop, tablet, and mobile devices
 
 ## 🎉 MVP Success Metrics
 
