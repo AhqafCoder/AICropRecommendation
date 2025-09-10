@@ -1,4 +1,4 @@
-# Express.js Backend Integration Guide for Crop AI API
+# Express.js Backend Integration Guide 
 
 ## Overview
 This guide provides step-by-step instructions for integrating the Crop AI FastAPI service into an Express.js backend application. This architecture allows your web application to securely access crop recommendations while maintaining separation of concerns.

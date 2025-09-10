@@ -32,7 +32,7 @@ def test_project_structure():
         "src/risk_level.py",
         "api/main.py",
         "api/Dockerfile",
-        "models/crop_disease_v2_model.pth",
+        "models/crop_disease_v3_model.pth",
         "knowledge_base/disease_info.json",
         "test_leaf_sample.jpg"
     ]
@@ -130,7 +130,7 @@ def test_model_loading():
         print("✅ Model architecture created")
         
         # Test model file exists
-        model_path = "models/crop_disease_v2_model.pth"
+        model_path = "models/crop_disease_v3_model.pth"
         if Path(model_path).exists():
             # Try to load the model
             checkpoint = torch.load(model_path, map_location='cpu')

@@ -13,7 +13,7 @@ services:
       - ./outputs:/app/outputs
     environment:
       - PYTHONPATH=/app
-      - MODEL_PATH=/app/models/crop_disease_v2_model.pth
+      - MODEL_PATH=/app/models/crop_disease_v3_model.pth
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

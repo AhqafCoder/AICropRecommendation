@@ -20,32 +20,30 @@ def load_model():
     try:
         from src.model import CropDiseaseResNet50
         
-        # Class names
+        # Class names (updated for V3 model: Pepper, Potato, Tomato)
         class_names = [
-            'Corn___Cercospora_leaf_spot_Gray_leaf_spot',
-            'Corn___Common_rust',
-            'Corn___healthy',
-            'Corn___Northern_Leaf_Blight',
-            'Potato___Early_Blight',
+            'Pepper__bell___Bacterial_spot',
+            'Pepper__bell___healthy',
+            'Potato___Early_blight',
             'Potato___healthy',
-            'Potato___Late_Blight',
-            'Tomato___Bacterial_spot',
-            'Tomato___Early_blight',
-            'Tomato___healthy',
-            'Tomato___Late_blight',
-            'Tomato___Leaf_Mold',
-            'Tomato___Septoria_leaf_spot',
-            'Tomato___Spider_mites_Two_spotted_spider_mite',
-            'Tomato___Target_Spot',
-            'Tomato___Tomato_mosaic_virus',
-            'Tomato___Tomato_Yellow_Leaf_Curl_Virus'
+            'Potato___Late_blight',
+            'Tomato__Target_Spot',
+            'Tomato__Tomato_mosaic_virus',
+            'Tomato__Tomato_YellowLeaf__Curl_Virus',
+            'Tomato_Bacterial_spot',
+            'Tomato_Early_blight',
+            'Tomato_healthy',
+            'Tomato_Late_blight',
+            'Tomato_Leaf_Mold',
+            'Tomato_Septoria_leaf_spot',
+            'Tomato_Spider_mites_Two_spotted_spider_mite'
         ]
         
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(f"Using device: {device}")
         
         # Load the specified model
-        model_path = 'models/crop_disease_v2_model.pth'
+        model_path = 'models/crop_disease_v3_model.pth'
         
         model = None
         loaded_path = None
@@ -60,7 +58,7 @@ def load_model():
                 # Load checkpoint
                 checkpoint = torch.load(model_path, map_location=device)
                 
-                # Handle checkpoint format from crop_disease_v2_model.pth
+                # Handle checkpoint format from crop_disease_v3_model.pth
                 if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
                     state_dict = checkpoint['model_state_dict']
                     # Use class names from checkpoint if available
