@@ -40,12 +40,7 @@ venv.bak/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# Model artifacts (keep structure but ignore large files)
-models/*.pkl
-models/*.joblib
-models/*.h5
-models/*.onnx
-models/explain_plots/
+
 
 # Data files (keep structure but ignore large datasets)
 data/processed/*.csv
