@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "start-ai": "cd ../ai_v2 && start_api_server.bat",
+    "dev-full": "concurrently \"npm run start-ai\" \"npm run dev\""
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
