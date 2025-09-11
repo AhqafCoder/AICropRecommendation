@@ -10,7 +10,6 @@ import Footer from "@/components/Footer";
 import { MarketplaceService, Product, MarketPrice } from "@/lib/marketplace";
 import { 
   Search, 
-  Filter, 
   Star, 
   MapPin, 
   Phone, 
@@ -23,108 +22,6 @@ import {
   DollarSign,
   Loader2
 } from "lucide-react";
-
-const sampleProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Premium Rice Seeds (IR64)',
-    category: 'seeds',
-    price: 120,
-    unit: 'kg',
-    seller: 'Green Valley Seeds',
-    location: 'Punjab, India',
-    rating: 4.8,
-    reviews: 156,
-    inStock: true,
-    image: '🌾',
-    description: 'High-yield IR64 rice variety suitable for kharif season',
-    priceChange: -2.5
-  },
-  {
-    id: '2',
-    name: 'NPK Fertilizer (20:20:0)',
-    category: 'fertilizer',
-    price: 850,
-    unit: '50kg bag',
-    seller: 'FarmTech Solutions',
-    location: 'Maharashtra, India',
-    rating: 4.6,
-    reviews: 89,
-    inStock: true,
-    image: '🌱',
-    description: 'Balanced NPK fertilizer for optimal crop growth',
-    priceChange: 3.2
-  },
-  {
-    id: '3',
-    name: 'Solar Water Pump',
-    category: 'equipment',
-    price: 45000,
-    unit: 'unit',
-    seller: 'AgriTech India',
-    location: 'Gujarat, India',
-    rating: 4.9,
-    reviews: 34,
-    inStock: true,
-    image: '⚡',
-    description: '5HP solar-powered water pump with 2-year warranty',
-    priceChange: -1.8
-  },
-  {
-    id: '4',
-    name: 'Organic Pesticide',
-    category: 'pesticide',
-    price: 320,
-    unit: 'liter',
-    seller: 'Bio Solutions',
-    location: 'Karnataka, India',
-    rating: 4.7,
-    reviews: 78,
-    inStock: false,
-    image: '🛡️',
-    description: 'Eco-friendly organic pesticide for crop protection',
-    priceChange: 0.5
-  }
-];
-
-const marketPrices: MarketPrice[] = [
-  {
-    crop: 'Rice',
-    currentPrice: 2100,
-    unit: 'quintal',
-    change: 50,
-    changePercent: 2.4,
-    market: 'Delhi Mandi',
-    lastUpdated: '2 hours ago'
-  },
-  {
-    crop: 'Wheat',
-    currentPrice: 2050,
-    unit: 'quintal',
-    change: -30,
-    changePercent: -1.4,
-    market: 'Punjab Mandi',
-    lastUpdated: '1 hour ago'
-  },
-  {
-    crop: 'Cotton',
-    currentPrice: 5800,
-    unit: 'quintal',
-    change: 120,
-    changePercent: 2.1,
-    market: 'Gujarat Mandi',
-    lastUpdated: '3 hours ago'
-  },
-  {
-    crop: 'Sugarcane',
-    currentPrice: 320,
-    unit: 'quintal',
-    change: 0,
-    changePercent: 0,
-    market: 'UP Mandi',
-    lastUpdated: '4 hours ago'
-  }
-];
 
 export default function MarketplacePage() {
   const [products, setProducts] = useState<Product[]>([]);
