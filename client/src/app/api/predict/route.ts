@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       try {
         const errorData = await response.json();
         errorMessage = errorData.error || errorData.detail || errorMessage;
-      } catch (e) {
+      } catch {
         // If response is not JSON, use status text
         errorMessage = response.statusText || errorMessage;
       }
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Handle OPTIONS for CORS if needed
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {

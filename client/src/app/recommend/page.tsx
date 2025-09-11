@@ -12,12 +12,17 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { CustomSelect } from '@/components/ui/custom-select';
+import { Container } from '@/components/ui/container';
+import { Grid } from '@/components/ui/grid';
+import { Section } from '@/components/ui/section';
+import { FormField } from '@/components/ui/form-field';
+import { MetricCard } from '@/components/ui/metric-card';
 import { 
   Leaf, TrendingUp, DollarSign, Droplets, Thermometer, Gauge, 
   Brain, Target, Sprout, BarChart3, PieChart, Activity,
   Loader2, AlertCircle, CheckCircle, Info
 } from 'lucide-react';
-import { PieChart as RechartsPieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, Area, AreaChart, Pie } from 'recharts';
+import { PieChart as RechartsPieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Pie } from 'recharts';
 
 interface PredictionResult {
   recommended_crop: string;
@@ -152,177 +157,203 @@ export default function CropRecommendationPage() {
     { name: 'Rainfall', value: formData.rainfall, unit: 'mm', optimal: 800 },
   ];
 
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <Header />
       
       {/* Enhanced Hero Section */}
-      <section className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="inline-flex items-center px-6 py-3 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium mb-6">
-              <Brain className="w-5 h-5 mr-2" />
-              AI-Powered Precision Agriculture
+      <Section variant="hero" spacing="xl">
+        <Container>
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="inline-flex items-center px-6 py-3 rounded-full bg-white/20 backdrop-blur-sm text-gray-700 text-sm font-medium mb-8 border border-white/30">
+              <Brain className="w-5 h-5 mr-2 text-green-600" />
+              AI-Powered Precision Agriculture Platform
             </div>
-            <h1 className="text-5xl sm:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-green-100">
+            
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 leading-tight">
               Smart Crop Recommendations
             </h1>
-            <p className="text-xl text-green-100 max-w-4xl mx-auto mb-8">
+            
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-10 leading-relaxed">
               Leverage advanced machine learning and real-time data analysis to optimize your farming decisions, 
               maximize yields, and boost profitability with personalized crop recommendations.
             </p>
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                <CheckCircle className="w-4 h-4 mr-2" />
-                97% Accuracy Rate
+            
+            <Grid cols={3} gap="lg" className="max-w-2xl mx-auto">
+              <div className="flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-2xl px-6 py-4 border border-white/50 shadow-lg">
+                <CheckCircle className="w-5 h-5 mr-2 text-green-600" />
+                <span className="font-semibold text-gray-700">97% Accuracy</span>
               </div>
-              <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                <TrendingUp className="w-4 h-4 mr-2" />
-                25% Avg. ROI Increase
+              <div className="flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-2xl px-6 py-4 border border-white/50 shadow-lg">
+                <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
+                <span className="font-semibold text-gray-700">25% ROI Boost</span>
               </div>
-              <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                <Leaf className="w-4 h-4 mr-2" />
-                20+ Crop Types
+              <div className="flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-2xl px-6 py-4 border border-white/50 shadow-lg">
+                <Leaf className="w-5 h-5 mr-2 text-purple-600" />
+                <span className="font-semibold text-gray-700">20+ Crops</span>
               </div>
-            </div>
+            </Grid>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
       {/* Enhanced Features Grid */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose Our AI Platform?</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+      <Section variant="feature" spacing="lg">
+        <Container>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">Why Choose Our AI Platform?</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Advanced algorithms meet agricultural expertise to deliver unprecedented farming insights
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          
+          <Grid cols={4} gap="lg">
             {[
               {
                 icon: Brain,
                 title: "AI-Powered Analysis",
-                description: "Machine learning models trained on millions of agricultural data points",
-                color: "blue"
+                description: "Machine learning models trained on millions of agricultural data points for precise recommendations",
+                color: "blue",
+                gradient: "from-blue-500 to-cyan-500"
               },
               {
                 icon: Target,
-                title: "Precision Targeting",
+                title: "Precision Targeting", 
                 description: "Personalized recommendations based on your specific soil and climate conditions",
-                color: "green"
+                color: "green",
+                gradient: "from-green-500 to-emerald-500"
               },
               {
                 icon: BarChart3,
                 title: "Profit Optimization",
-                description: "Detailed financial analysis with ROI predictions and cost breakdowns",
-                color: "purple"
+                description: "Detailed financial analysis with ROI predictions and comprehensive cost breakdowns",
+                color: "purple", 
+                gradient: "from-purple-500 to-pink-500"
               },
               {
                 icon: Activity,
                 title: "Real-time Insights",
-                description: "Live data integration for up-to-date recommendations and market trends",
-                color: "orange"
+                description: "Live data integration for up-to-date recommendations and market trend analysis",
+                color: "orange",
+                gradient: "from-orange-500 to-red-500"
               }
             ].map((feature, index) => (
-              <Card key={index} className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-                <CardContent className="p-6">
-                  <div className={`w-12 h-12 bg-${feature.color}-100 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                    <feature.icon className={`w-6 h-6 text-${feature.color}-600`} />
+              <Card key={index} className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2">
+                <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
+                <CardContent className="p-8 relative z-10">
+                  <div className={`w-16 h-16 bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                    <feature.icon className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                  <p className="text-gray-600 text-sm">{feature.description}</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-gray-700 transition-colors">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </CardContent>
-                <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-${feature.color}-400 to-${feature.color}-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300`}></div>
+                <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${feature.gradient} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
               </Card>
             ))}
-          </div>
-        </div>
-      </section>
+          </Grid>
+        </Container>
+      </Section>
 
       {/* Enhanced Main Application */}
-      <main className="py-12 bg-gradient-to-b from-gray-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 gap-8">
+      <Section variant="default" spacing="lg">
+        <Container>
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
             
             {/* Enhanced Input Panel */}
-            <div className="lg:col-span-1 space-y-6">
-              <Card className="border-0 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-t-lg">
-                  <CardTitle className="flex items-center gap-3">
-                    <Leaf className="h-6 w-6" />
-                    Farm Parameters
-                  </CardTitle>
-                  <CardDescription className="text-green-100">
-                    Enter your field conditions for AI analysis
-                  </CardDescription>
+            <div className="xl:col-span-4 space-y-8">
+              <Card className="border-0 shadow-xl overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white relative">
+                  <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+                  <div className="relative z-10">
+                    <CardTitle className="flex items-center gap-3 text-xl">
+                      <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                        <Leaf className="h-6 w-6" />
+                      </div>
+                      Farm Parameters
+                    </CardTitle>
+                    <CardDescription className="text-green-100 mt-2">
+                      Enter your field conditions for AI analysis
+                    </CardDescription>
+                  </div>
                 </CardHeader>
-                <CardContent className="p-6 space-y-6">
+                <CardContent className="p-8 space-y-8">
                   
-                  {/* Soil Nutrients with Visual Indicators */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sprout className="h-5 w-5 text-green-600" />
-                      <h3 className="font-semibold text-gray-900">Soil Nutrients (kg/ha)</h3>
+                  {/* Enhanced Soil Nutrients */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <Sprout className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">Soil Nutrients</h3>
+                        <p className="text-sm text-gray-600">NPK levels in kg/ha</p>
+                      </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 gap-4">
+                    <Grid cols={1} gap="lg">
                       {[
-                        { key: 'N', label: 'Nitrogen (N)', max: 200, color: 'blue', icon: '🟦' },
-                        { key: 'P', label: 'Phosphorus (P)', max: 150, color: 'green', icon: '🟩' },
-                        { key: 'K', label: 'Potassium (K)', max: 200, color: 'yellow', icon: '🟨' }
+                        { key: 'N', label: 'Nitrogen (N)', max: 200, color: '#3B82F6', icon: '�', desc: 'Essential for leaf growth' },
+                        { key: 'P', label: 'Phosphorus (P)', max: 150, color: '#10B981', icon: '�', desc: 'Promotes root development' },
+                        { key: 'K', label: 'Potassium (K)', max: 200, color: '#F59E0B', icon: '�', desc: 'Improves disease resistance' }
                       ].map((nutrient) => (
-                        <div key={nutrient.key} className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-gray-50 transition-colors">
-                          <div className="flex items-center justify-between">
-                            <Label className="flex items-center gap-2 text-sm font-medium">
-                              <span className="text-lg">{nutrient.icon}</span>
-                              {nutrient.label}
-                            </Label>
-                            <Badge variant="outline" className={`font-semibold`}>
-                              {formData[nutrient.key as keyof typeof formData]} kg/ha
-                            </Badge>
-                          </div>
-                          <Input
-                            type="number"
-                            min="0"
-                            max={nutrient.max}
-                            value={formData[nutrient.key as keyof typeof formData]}
-                            onChange={(e) => handleInputChange(nutrient.key, parseFloat(e.target.value))}
-                            className="w-full transition-all duration-200 focus:ring-2 focus:ring-blue-500/20 border-2"
-                          />
-                          <div className="flex justify-between text-xs text-gray-500">
-                            <span>Min: 0</span>
-                            <span>Max: {nutrient.max}</span>
-                          </div>
-                          <Progress 
-                            value={(Number(formData[nutrient.key as keyof typeof formData]) / nutrient.max) * 100} 
-                            className="h-3" 
-                          />
-                          <div className="text-xs text-center text-gray-600 font-medium">
-                            {((Number(formData[nutrient.key as keyof typeof formData]) / nutrient.max) * 100).toFixed(0)}% of maximum
+                        <div key={nutrient.key} className="group p-6 border-2 border-gray-100 rounded-2xl bg-gradient-to-br from-gray-50 to-white hover:border-gray-200 hover:shadow-lg transition-all duration-300">
+                          <FormField
+                            label={nutrient.label}
+                            icon={nutrient.icon}
+                            badge={`${formData[nutrient.key as keyof typeof formData]} kg/ha`}
+                            hint={nutrient.desc}
+                          >
+                            <Input
+                              type="number"
+                              min="0"
+                              max={nutrient.max}
+                              value={formData[nutrient.key as keyof typeof formData]}
+                              onChange={(e) => handleInputChange(nutrient.key, parseFloat(e.target.value))}
+                              className="h-12 border-2 focus:border-blue-500 transition-all duration-200"
+                            />
+                          </FormField>
+                          
+                          <div className="mt-4 space-y-3">
+                            <div className="flex justify-between text-xs text-gray-500 font-medium">
+                              <span>0</span>
+                              <span className="text-gray-700">{((Number(formData[nutrient.key as keyof typeof formData]) / nutrient.max) * 100).toFixed(0)}%</span>
+                              <span>{nutrient.max}</span>
+                            </div>
+                            <Progress 
+                              value={(Number(formData[nutrient.key as keyof typeof formData]) / nutrient.max) * 100} 
+                              className="h-3 bg-gray-200"
+                            />
                           </div>
                         </div>
                       ))}
-                    </div>
+                    </Grid>
                   </div>
 
-                  <Separator />
+                  <Separator className="my-8" />
 
-                  {/* Climate Conditions with Icons */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Thermometer className="h-5 w-5 text-orange-600" />
-                      <h3 className="font-semibold text-gray-900">Climate Conditions</h3>
+                  {/* Enhanced Climate Conditions */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Thermometer className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">Climate Conditions</h3>
+                        <p className="text-sm text-gray-600">Environmental parameters</p>
+                      </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium">
-                          <Thermometer className="h-4 w-4 text-orange-500" />
-                          Temperature (°C)
-                        </Label>
+                    <Grid cols={2} gap="lg">
+                      <FormField
+                        label="Temperature (°C)"
+                        icon={<Thermometer className="h-4 w-4 text-orange-500" />}
+                        badge={`${formData.temperature}°C`}
+                        hint="Optimal range: 15-35°C"
+                      >
                         <Input
                           type="number"
                           min="-10"
@@ -330,36 +361,32 @@ export default function CropRecommendationPage() {
                           step="0.5"
                           value={formData.temperature}
                           onChange={(e) => handleInputChange('temperature', parseFloat(e.target.value))}
-                          className="transition-all duration-200 focus:ring-2 focus:ring-orange-500/20"
+                          className="h-12 border-2 focus:border-orange-500 transition-all duration-200"
                         />
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>Min: -10°C</span>
-                          <span>Max: 55°C</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium">
-                          <Droplets className="h-4 w-4 text-blue-500" />
-                          Humidity (%)
-                        </Label>
+                      </FormField>
+
+                      <FormField
+                        label="Humidity (%)"
+                        icon={<Droplets className="h-4 w-4 text-blue-500" />}
+                        badge={`${formData.humidity}%`}
+                        hint="Optimal range: 50-80%"
+                      >
                         <Input
                           type="number"
                           min="0"
                           max="100"
                           value={formData.humidity}
                           onChange={(e) => handleInputChange('humidity', parseFloat(e.target.value))}
-                          className="transition-all duration-200 focus:ring-2 focus:ring-blue-500/20"
+                          className="h-12 border-2 focus:border-blue-500 transition-all duration-200"
                         />
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>Min: 0%</span>
-                          <span>Max: 100%</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium">
-                          <Gauge className="h-4 w-4 text-purple-500" />
-                          pH Level
-                        </Label>
+                      </FormField>
+
+                      <FormField
+                        label="pH Level"
+                        icon={<Gauge className="h-4 w-4 text-purple-500" />}
+                        badge={`pH ${formData.ph}`}
+                        hint="Optimal range: 6.0-7.5"
+                      >
                         <Input
                           type="number"
                           min="3.5"
@@ -367,32 +394,26 @@ export default function CropRecommendationPage() {
                           step="0.1"
                           value={formData.ph}
                           onChange={(e) => handleInputChange('ph', parseFloat(e.target.value))}
-                          className="transition-all duration-200 focus:ring-2 focus:ring-purple-500/20"
+                          className="h-12 border-2 focus:border-purple-500 transition-all duration-200"
                         />
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>Acidic: 3.5</span>
-                          <span>Alkaline: 9.0</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium">
-                          <Droplets className="h-4 w-4 text-cyan-500" />
-                          Rainfall (mm)
-                        </Label>
+                      </FormField>
+
+                      <FormField
+                        label="Rainfall (mm)"
+                        icon={<Droplets className="h-4 w-4 text-cyan-500" />}
+                        badge={`${formData.rainfall}mm`}
+                        hint="Annual rainfall amount"
+                      >
                         <Input
                           type="number"
                           min="0"
                           max="5000"
                           value={formData.rainfall}
                           onChange={(e) => handleInputChange('rainfall', parseFloat(e.target.value))}
-                          className="transition-all duration-200 focus:ring-2 focus:ring-cyan-500/20"
+                          className="h-12 border-2 focus:border-cyan-500 transition-all duration-200"
                         />
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>Arid: 0mm</span>
-                          <span>Tropical: 5000mm</span>
-                        </div>
-                      </div>
-                    </div>
+                      </FormField>
+                    </Grid>
                   </div>
 
                   <Separator />
@@ -612,7 +633,7 @@ export default function CropRecommendationPage() {
             </div>
 
             {/* Enhanced Results Panel */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="xl:col-span-8 space-y-6">
               {loading && (
                 <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
                   <CardContent className="flex flex-col items-center justify-center py-16 text-center">
@@ -693,91 +714,97 @@ export default function CropRecommendationPage() {
                         </TabsTrigger>
                       </TabsList>
 
-                      {/* Overview Tab */}
-                      <TabsContent value="overview" className="p-6 space-y-6">
-                        {/* Key Metrics Cards */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-                            <CardContent className="p-4 text-center">
-                              <Leaf className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                              <p className="text-sm font-medium text-green-800">Recommended Crop</p>
-                              <p className="text-2xl font-bold text-green-700 capitalize">
-                                {prediction.recommended_crop}
-                              </p>
-                            </CardContent>
-                          </Card>
-                          
-                          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-                            <CardContent className="p-4 text-center">
-                              <Gauge className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                              <p className="text-sm font-medium text-blue-800">Confidence</p>
-                              <p className="text-2xl font-bold text-blue-700">
-                                {(prediction.confidence * 100).toFixed(1)}%
-                              </p>
-                              <Progress value={prediction.confidence * 100} className="mt-2" />
-                            </CardContent>
-                          </Card>
-                          
-                          <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
-                            <CardContent className="p-4 text-center">
-                              <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                              <p className="text-sm font-medium text-purple-800">Expected Yield</p>
-                              <p className="text-2xl font-bold text-purple-700">
-                                {prediction.expected_yield_t_per_acre.toFixed(1)}
-                              </p>
-                              <p className="text-xs text-purple-600">tonnes/acre</p>
-                            </CardContent>
-                          </Card>
-                          
-                          <Card className="bg-gradient-to-br from-orange-50 to-red-50 border-orange-200">
-                            <CardContent className="p-4 text-center">
-                              <DollarSign className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                              <p className="text-sm font-medium text-orange-800">Net Profit</p>
-                              <p className="text-2xl font-bold text-orange-700">
-                                ₹{(prediction.profit_breakdown.net / 1000).toFixed(0)}K
-                              </p>
-                              <p className="text-xs text-orange-600">
-                                {prediction.profit_breakdown.roi.toFixed(1)}% ROI
-                              </p>
-                            </CardContent>
-                          </Card>
+                      {/* Enhanced Overview Tab */}
+                      <TabsContent value="overview" className="p-8 space-y-8">
+                        {/* Hero Metrics Section */}
+                        <div className="text-center mb-8">
+                          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                            🌾 {prediction.recommended_crop.charAt(0).toUpperCase() + prediction.recommended_crop.slice(1)}
+                          </h2>
+                          <p className="text-gray-600">
+                            AI-recommended crop based on your farm parameters
+                          </p>
                         </div>
 
+                        {/* Key Metrics Grid */}
+                        <Grid cols={4} gap="lg">
+                          <MetricCard
+                            title="AI Confidence"
+                            value={`${(prediction.confidence * 100).toFixed(1)}%`}
+                            icon={<Brain className="h-5 w-5" />}
+                            variant="success"
+                            trend={prediction.confidence > 0.8 ? "up" : prediction.confidence > 0.6 ? "neutral" : "down"}
+                            trendValue={prediction.confidence > 0.8 ? "High" : prediction.confidence > 0.6 ? "Good" : "Low"}
+                          />
+                          
+                          <MetricCard
+                            title="Expected Yield"
+                            value={`${prediction.expected_yield_t_per_acre.toFixed(1)}`}
+                            subtitle="tonnes per acre"
+                            icon={<TrendingUp className="h-5 w-5" />}
+                            variant="info"
+                            trend="up"
+                            trendValue="Per acre"
+                          />
+                          
+                          <MetricCard
+                            title="ROI Projection"
+                            value={`${prediction.profit_breakdown.roi.toFixed(1)}%`}
+                            subtitle="Return on investment"
+                            icon={<DollarSign className="h-5 w-5" />}
+                            variant={prediction.profit_breakdown.roi > 20 ? "success" : prediction.profit_breakdown.roi > 10 ? "warning" : "danger"}
+                            trend={prediction.profit_breakdown.roi > 15 ? "up" : "neutral"}
+                            trendValue={prediction.profit_breakdown.roi > 20 ? "Excellent" : prediction.profit_breakdown.roi > 10 ? "Good" : "Fair"}
+                          />
+                          
+                          <MetricCard
+                            title="Net Profit"
+                            value={`₹${prediction.profit_breakdown.net.toLocaleString()}`}
+                            subtitle="per hectare"
+                            icon={<Activity className="h-5 w-5" />}
+                            variant="success"
+                            trend="up"
+                            trendValue="Projected"
+                          />
+                        </Grid>
+
                         {/* Yield Range Visualization */}
-                        <Card>
+                        <Card className="bg-gradient-to-br from-gray-50 to-blue-50">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                              <BarChart3 className="h-5 w-5 text-green-600" />
-                              Yield Prediction Range
+                              <BarChart3 className="h-5 w-5 text-blue-600" />
+                              Yield Projection Range
                             </CardTitle>
+                            <CardDescription>
+                              Expected yield range (P10-P90 confidence interval)
+                            </CardDescription>
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-4">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">Low Estimate (P10)</span>
-                                <Badge variant="outline">{prediction.yield_interval_p10_p90[0].toFixed(1)} t/acre</Badge>
+                                <span className="text-sm font-medium text-gray-600">Minimum (P10)</span>
+                                <span className="font-bold text-gray-800">
+                                  {prediction.yield_interval_p10_p90[0].toFixed(1)} tonnes
+                                </span>
                               </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">Expected Yield</span>
-                                <Badge className="bg-green-600">{prediction.expected_yield_t_per_acre.toFixed(1)} t/acre</Badge>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">High Estimate (P90)</span>
-                                <Badge variant="outline">{prediction.yield_interval_p10_p90[1].toFixed(1)} t/acre</Badge>
-                              </div>
-                              <div className="mt-4">
-                                <div className="h-4 bg-gray-200 rounded-full relative">
-                                  <div 
-                                    className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full"
-                                    style={{
-                                      width: `${(prediction.expected_yield_t_per_acre / prediction.yield_interval_p10_p90[1]) * 100}%`
-                                    }}
-                                  ></div>
+                              
+                              <div className="relative">
+                                <Progress 
+                                  value={50} 
+                                  className="h-6 bg-gradient-to-r from-red-200 via-yellow-200 to-green-200"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-sm font-bold text-gray-700">
+                                    Expected: {prediction.expected_yield_t_per_acre.toFixed(1)}t
+                                  </span>
                                 </div>
-                                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                  <span>{prediction.yield_interval_p10_p90[0].toFixed(1)}</span>
-                                  <span>{prediction.yield_interval_p10_p90[1].toFixed(1)}</span>
-                                </div>
+                              </div>
+                              
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-600">Maximum (P90)</span>
+                                <span className="font-bold text-gray-800">
+                                  {prediction.yield_interval_p10_p90[1].toFixed(1)} tonnes
+                                </span>
                               </div>
                             </div>
                           </CardContent>
@@ -801,8 +828,8 @@ export default function CropRecommendationPage() {
                                   <RechartsPieChart>
                                     <Pie
                                       data={[
-                                        { name: 'Net Profit', value: prediction.profit_breakdown.net, color: '#10B981' },
-                                        { name: 'Investment', value: prediction.profit_breakdown.investment, color: '#EF4444' }
+                                        { name: 'Net Profit', value: prediction?.profit_breakdown?.net || 0, color: '#10B981' },
+                                        { name: 'Investment', value: prediction?.profit_breakdown?.investment || 0, color: '#EF4444' }
                                       ]}
                                       cx="50%"
                                       cy="50%"
@@ -829,37 +856,37 @@ export default function CropRecommendationPage() {
                             <CardContent className="space-y-4">
                               <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                                 <span className="font-medium text-green-800">Gross Revenue</span>
-                                <span className="font-bold text-green-700">₹{prediction.profit_breakdown.gross.toLocaleString()}</span>
+                                <span className="font-bold text-green-700">₹{prediction?.profit_breakdown?.gross?.toLocaleString() || '0'}</span>
                               </div>
                               <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                                 <span className="font-medium text-red-800">Total Investment</span>
-                                <span className="font-bold text-red-700">₹{prediction.profit_breakdown.investment.toLocaleString()}</span>
+                                <span className="font-bold text-red-700">₹{prediction?.profit_breakdown?.investment?.toLocaleString() || '0'}</span>
                               </div>
                               <Separator />
                               <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
                                 <span className="font-bold text-blue-800">Net Profit</span>
-                                <span className="font-bold text-blue-700 text-lg">₹{prediction.profit_breakdown.net.toLocaleString()}</span>
+                                <span className="font-bold text-blue-700 text-lg">₹{prediction?.profit_breakdown?.net?.toLocaleString() || '0'}</span>
                               </div>
                               <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
                                 <span className="font-bold text-purple-800">Return on Investment</span>
                                 <div className="text-right">
-                                  <span className="font-bold text-purple-700 text-lg">{prediction.profit_breakdown.roi.toFixed(1)}%</span>
-                                  <Progress value={Math.min(prediction.profit_breakdown.roi, 100)} className="mt-1 w-24" />
+                                  <span className="font-bold text-purple-700 text-lg">{prediction?.profit_breakdown?.roi?.toFixed(1) || '0'}%</span>
+                                  <Progress value={Math.min(prediction?.profit_breakdown?.roi || 0, 100)} className="mt-1 w-24" />
                                 </div>
                               </div>
                               
                               {/* ROI Indicator */}
                               <div className="mt-4 p-3 rounded-lg" style={{
-                                backgroundColor: prediction.profit_breakdown.roi > 50 ? '#DCFCE7' : 
-                                                prediction.profit_breakdown.roi > 30 ? '#FEF3C7' : '#FEE2E2'
+                                backgroundColor: (prediction?.profit_breakdown?.roi || 0) > 50 ? '#DCFCE7' : 
+                                                (prediction?.profit_breakdown?.roi || 0) > 30 ? '#FEF3C7' : '#FEE2E2'
                               }}>
                                 <p className="text-center font-medium" style={{
-                                  color: prediction.profit_breakdown.roi > 50 ? '#166534' : 
-                                         prediction.profit_breakdown.roi > 30 ? '#92400E' : '#991B1B'
+                                  color: (prediction?.profit_breakdown?.roi || 0) > 50 ? '#166534' : 
+                                         (prediction?.profit_breakdown?.roi || 0) > 30 ? '#92400E' : '#991B1B'
                                 }}>
-                                  {prediction.profit_breakdown.roi > 50 ? '🎉 Excellent ROI' : 
-                                   prediction.profit_breakdown.roi > 30 ? '👍 Good ROI' : 
-                                   prediction.profit_breakdown.roi > 15 ? '⚠️ Average ROI' : '⚠️ Low ROI'}
+                                  {(prediction?.profit_breakdown?.roi || 0) > 50 ? '🎉 Excellent ROI' : 
+                                   (prediction?.profit_breakdown?.roi || 0) > 30 ? '👍 Good ROI' : 
+                                   (prediction?.profit_breakdown?.roi || 0) > 15 ? '⚠️ Average ROI' : '⚠️ Low ROI'}
                                 </p>
                               </div>
                             </CardContent>
@@ -869,7 +896,7 @@ export default function CropRecommendationPage() {
 
                       {/* Analysis Tab */}
                       <TabsContent value="analysis" className="p-6 space-y-6">
-                        {prediction.previous_crop_analysis && (
+                        {prediction?.previous_crop_analysis && (
                           <Card>
                             <CardHeader>
                               <CardTitle className="flex items-center gap-2">
@@ -907,7 +934,7 @@ export default function CropRecommendationPage() {
                           </Card>
                         )}
 
-                        {prediction.season_analysis && (
+                        {prediction?.season_analysis && (
                           <Card>
                             <CardHeader>
                               <CardTitle className="flex items-center gap-2">
@@ -966,7 +993,7 @@ export default function CropRecommendationPage() {
 
                       {/* Recommendations Tab */}
                       <TabsContent value="recommendations" className="p-6 space-y-6">
-                        {prediction.fertilizer_recommendation && (
+                        {prediction?.fertilizer_recommendation && (
                           <Card>
                             <CardHeader>
                               <CardTitle className="flex items-center gap-2">
@@ -1004,7 +1031,7 @@ export default function CropRecommendationPage() {
                           <CardContent>
                             <div className="space-y-3">
                               {[
-                                { action: `Plant ${prediction.recommended_crop} for optimal yield`, priority: "high" },
+                                { action: `Plant ${prediction?.recommended_crop || 'recommended crop'} for optimal yield`, priority: "high" },
                                 { action: "Monitor soil moisture levels regularly", priority: "medium" },
                                 { action: "Apply recommended fertilizers before planting", priority: "high" },
                                 { action: "Consider crop rotation for next season", priority: "low" },
@@ -1031,7 +1058,7 @@ export default function CropRecommendationPage() {
 
                       {/* AI Insights Tab */}
                       <TabsContent value="insights" className="p-6 space-y-6">
-                        {prediction.why && (
+                        {prediction?.why && (
                           <Card>
                             <CardHeader>
                               <CardTitle className="flex items-center gap-2">
@@ -1069,11 +1096,11 @@ export default function CropRecommendationPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                               <div>
                                 <p className="font-medium text-gray-600">Model Version</p>
-                                <p className="text-gray-800">{prediction.model_version}</p>
+                                <p className="text-gray-800">{prediction?.model_version || 'Unknown'}</p>
                               </div>
                               <div>
                                 <p className="font-medium text-gray-600">Analysis Time</p>
-                                <p className="text-gray-800">{new Date(prediction.timestamp).toLocaleString()}</p>
+                                <p className="text-gray-800">{prediction?.timestamp ? new Date(prediction.timestamp).toLocaleString() : 'Unknown'}</p>
                               </div>
                               <div>
                                 <p className="font-medium text-gray-600">Region</p>
@@ -1098,7 +1125,7 @@ export default function CropRecommendationPage() {
                     </div>
                     <h3 className="text-2xl font-semibold text-gray-800 mb-3">Ready for AI Analysis</h3>
                     <p className="text-gray-600 max-w-md mb-6">
-                      Enter your farm parameters on the left and click "Get AI Recommendation" to receive 
+                      Enter your farm parameters on the left and click &ldquo;Get AI Recommendation&rdquo; to receive 
                       personalized crop suggestions with detailed financial analysis.
                     </p>
                     <div className="flex flex-wrap gap-2 justify-center mb-6">
@@ -1125,8 +1152,8 @@ export default function CropRecommendationPage() {
               )}
             </div>
           </div>
-        </div>
-      </main>
+        </Container>
+      </Section>
 
       <Footer />
     </div>

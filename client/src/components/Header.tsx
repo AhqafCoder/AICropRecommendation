@@ -7,7 +7,6 @@ import {
   Leaf, 
   Menu, 
   X, 
-  ChevronDown,
   Brain,
   Camera,
   BarChart3,

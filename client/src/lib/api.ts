@@ -103,8 +103,8 @@ export class CropAIService {
     return this.makeRequest<{ status: string; message: string }>('/health');
   }
 
-  static async getApiInfo(): Promise<any> {
-    return this.makeRequest<any>('/');
+  static async getApiInfo(): Promise<Record<string, unknown>> {
+    return this.makeRequest<Record<string, unknown>>('/');
   }
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -131,9 +132,11 @@ export default function DiseaseDetection() {
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-500 transition-colors">
               {imagePreview ? (
                 <div className="space-y-4">
-                  <img
+                  <Image
                     src={imagePreview}
                     alt="Selected plant"
+                    width={192}
+                    height={192}
                     className="max-w-full h-48 object-cover rounded-lg mx-auto"
                   />
                   <Button
