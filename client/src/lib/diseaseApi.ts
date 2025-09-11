@@ -20,7 +20,9 @@ export interface DiseaseDetectionResult {
   };
   explanation?: {
     heatmap_available: boolean;
-    attention_regions: string[];
+    attention_regions: number[][];
+    explanation_image?: string; // Base64 encoded Grad-CAM overlay
+    error?: string;
   };
   class_probabilities: Record<string, number>;
   timestamp: string;
@@ -30,9 +32,24 @@ export interface DiseaseApiResponse {
   predicted_class: string;
   crop: string;
   confidence: number;
-  risk_assessment: any;
-  disease_info: any;
-  explanation?: any;
+  risk_assessment: {
+    overall_risk?: string;
+    risk_factors?: string[];
+    recommendations?: string[];
+  };
+  disease_info: {
+    description?: string;
+    symptoms?: string[];
+    solutions?: string[];
+    prevention?: string[];
+  };
+  explanation?: {
+    explanation_image?: string;
+    error?: string;
+    predicted_class?: string;
+    confidence?: number;
+    save_path?: string;
+  };
   class_probabilities: Record<string, number>;
 }
 
@@ -159,7 +176,12 @@ class DiseaseDetectionApi {
   /**
    * Get detailed information about a specific disease
    */
-  async getDiseaseInfo(crop: string, disease: string): Promise<any> {
+  async getDiseaseInfo(crop: string, disease: string): Promise<{
+    description?: string;
+    symptoms?: string[];
+    solutions?: string[];
+    prevention?: string[];
+  }> {
     try {
       const response = await fetch(`${this.baseUrl}/disease_info/${crop}/${disease}`, {
         method: 'GET',
@@ -244,12 +266,6 @@ class DiseaseDetectionApi {
    * Format API response to match frontend interface
    */
   private formatResponse(data: DiseaseApiResponse): DiseaseDetectionResult {
-    // Extract disease name and format it
-    const disease = this.formatDiseaseName(data.predicted_class);
-    
-    // Map risk level to severity
-    const severity = this.mapRiskToSeverity(data.risk_assessment?.overall_risk || 'Low');
-
     return {
       predicted_class: data.predicted_class,
       crop: data.crop || 'Unknown',
@@ -266,8 +282,10 @@ class DiseaseDetectionApi {
         prevention: this.extractArray(data.disease_info?.prevention)
       },
       explanation: data.explanation ? {
-        heatmap_available: !!data.explanation.heatmap_data,
-        attention_regions: data.explanation.attention_regions || []
+        heatmap_available: !!data.explanation.explanation_image,
+        attention_regions: [], // This would come from the API if available
+        explanation_image: data.explanation.explanation_image || '',
+        error: data.explanation.error
       } : undefined,
       class_probabilities: data.class_probabilities || {},
       timestamp: new Date().toISOString()
@@ -304,7 +322,7 @@ class DiseaseDetectionApi {
   /**
    * Extract array from various input formats
    */
-  private extractArray(input: any): string[] {
+  private extractArray(input: unknown): string[] {
     if (Array.isArray(input)) {
       return input;
     }

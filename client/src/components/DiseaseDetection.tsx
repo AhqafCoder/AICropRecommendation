@@ -5,8 +5,8 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Camera, AlertTriangle, CheckCircle, Loader2, Wifi, WifiOff, Info } from "lucide-react";
-import { diseaseApi, DiseaseDetectionResult, formatDiseaseName, getSeverityColor, getRiskIcon } from "@/lib/diseaseApi";
+import { Upload, Camera, AlertTriangle, CheckCircle, Loader2, Wifi, WifiOff } from "lucide-react";
+import { diseaseApi, DiseaseDetectionResult, formatDiseaseName, getSeverityColor } from "@/lib/diseaseApi";
 
 export default function DiseaseDetection() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -15,6 +15,7 @@ export default function DiseaseDetection() {
   const [loading, setLoading] = useState(false);
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const [error, setError] = useState<string | null>(null);
+  const [retryingConnection, setRetryingConnection] = useState(false);
 
   // Create a ref for the file input
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -26,12 +27,15 @@ export default function DiseaseDetection() {
 
   const checkApiStatus = async () => {
     setApiStatus('checking');
+    setRetryingConnection(true);
     try {
       const isOnline = await diseaseApi.healthCheck();
       setApiStatus(isOnline ? 'online' : 'offline');
     } catch (error) {
       console.error('API status check failed:', error);
       setApiStatus('offline');
+    } finally {
+      setRetryingConnection(false);
     }
   };
 
@@ -284,9 +288,10 @@ export default function DiseaseDetection() {
                           size="sm"
                           onClick={checkApiStatus}
                           className="border-red-200 text-red-700 hover:bg-red-50"
+                          disabled={retryingConnection}
                         >
-                          <Loader2 className={`w-3 h-3 mr-1 ${apiStatus === 'checking' ? 'animate-spin' : ''}`} />
-                          Retry Connection
+                          <Loader2 className={`w-3 h-3 mr-1 ${retryingConnection ? 'animate-spin' : ''}`} />
+                          {retryingConnection ? 'Checking...' : 'Retry Connection'}
                         </Button>
                       )}
                       {(error.includes('Image size') || error.includes('image file')) && (
