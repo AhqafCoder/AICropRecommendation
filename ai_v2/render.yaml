@@ -1,0 +1,49 @@
+# 🌐 Render Deployment Configuration
+services:
+  # Main FastAPI Web Service
+  - type: web
+    name: crop-ai-api
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    
+    # Environment Variables
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.9"
+      - key: ENVIRONMENT
+        value: production
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: API_PORT
+        value: $PORT
+        
+    # Health Check
+    healthCheckPath: /health
+    
+    # Auto-deploy settings
+    autoDeploy: true
+    
+    # Build settings
+    buildFilter:
+      paths:
+        - src/**
+        - models/**
+        - requirements.txt
+        - Dockerfile
+        - start_api_server.py
+    
+    # Resource limits for free tier
+    disk:
+      name: crop-ai-storage
+      mountPath: /app/data
+      sizeGB: 1
+
+# Optional: Background Services (if needed later)
+# databases:
+#   - name: crop-ai-db
+#     databaseName: crop_ai
+#     user: crop_ai_user
+#     plan: free
