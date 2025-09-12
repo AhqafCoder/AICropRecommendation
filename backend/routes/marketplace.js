@@ -1,285 +1,257 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/mockDatabase'); // Using mock database
-const { validateMarketplaceProduct, validateOrder } = require('../middleware/validation');
 
-// Get all marketplace products
-router.get('/products', async (req, res) => {
+const { productSchema, DataGenerator } = require('../models/schemas');
+
+// In-memory storage for products (replace with database in production)
+let products = DataGenerator.generateProducts(50);
+
+// Get all products with filtering and pagination
+router.get('/products', (req, res) => {
   try {
-    const { category, search, location, minPrice, maxPrice, page = 1, limit = 20 } = req.query;
-    
-    let query = `
-      SELECT p.*, s.name as seller_name, s.location, s.rating as seller_rating,
-             AVG(r.rating) as product_rating, COUNT(r.id) as review_count
-      FROM products p
-      LEFT JOIN sellers s ON p.seller_id = s.id
-      LEFT JOIN reviews r ON p.id = r.product_id
-      WHERE p.active = true
-    `;
-    
-    const params = [];
-    let paramCount = 0;
-    
-    // Add filters
-    if (category && category !== 'all') {
-      paramCount++;
-      query += ` AND p.category = $${paramCount}`;
-      params.push(category);
+    const { 
+      category, 
+      location, 
+      minPrice, 
+      maxPrice, 
+      inStock, 
+      search, 
+      page = 1, 
+      limit = 20,
+      sortBy = 'dateAdded',
+      sortOrder = 'desc'
+    } = req.query;
+
+    let filteredProducts = [...products];
+
+    // Apply filters
+    if (category) {
+      filteredProducts = filteredProducts.filter(p => p.category === category);
     }
-    
-    if (search) {
-      paramCount++;
-      query += ` AND (p.name ILIKE $${paramCount} OR p.description ILIKE $${paramCount} OR s.name ILIKE $${paramCount})`;
-      params.push(`%${search}%`);
-    }
-    
+
     if (location) {
-      paramCount++;
-      query += ` AND s.location ILIKE $${paramCount}`;
-      params.push(`%${location}%`);
+      filteredProducts = filteredProducts.filter(p => 
+        p.location.toLowerCase().includes(location.toLowerCase())
+      );
     }
-    
+
     if (minPrice) {
-      paramCount++;
-      query += ` AND p.price >= $${paramCount}`;
-      params.push(minPrice);
+      filteredProducts = filteredProducts.filter(p => p.price >= parseFloat(minPrice));
     }
-    
+
     if (maxPrice) {
-      paramCount++;
-      query += ` AND p.price <= $${paramCount}`;
-      params.push(maxPrice);
+      filteredProducts = filteredProducts.filter(p => p.price <= parseFloat(maxPrice));
     }
-    
-    query += `
-      GROUP BY p.id, s.name, s.location, s.rating
-      ORDER BY p.created_at DESC
-    `;
-    
-    // Add pagination
-    const offset = (page - 1) * limit;
-    paramCount++;
-    query += ` LIMIT $${paramCount}`;
-    params.push(limit);
-    
-    paramCount++;
-    query += ` OFFSET $${paramCount}`;
-    params.push(offset);
-    
-    const result = await db.query(query, params);
-    
-    // Get total count for pagination
-    let countQuery = `
-      SELECT COUNT(DISTINCT p.id) as total
-      FROM products p
-      LEFT JOIN sellers s ON p.seller_id = s.id
-      WHERE p.active = true
-    `;
-    
-    const countParams = params.slice(0, -2); // Remove limit and offset
-    const countResult = await db.query(countQuery.replace(/ LIMIT.*/, ''), countParams);
-    
+
+    if (inStock === 'true') {
+      filteredProducts = filteredProducts.filter(p => p.inStock);
+    }
+
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      filteredProducts = filteredProducts.filter(p => 
+        p.name.toLowerCase().includes(searchTerm) ||
+        p.description.toLowerCase().includes(searchTerm) ||
+        p.seller.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Apply sorting
+    filteredProducts.sort((a, b) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+      
+      if (sortBy === 'price' || sortBy === 'rating') {
+        aVal = parseFloat(aVal);
+        bVal = parseFloat(bVal);
+      }
+      
+      if (sortOrder === 'desc') {
+        return bVal > aVal ? 1 : -1;
+      } else {
+        return aVal > bVal ? 1 : -1;
+      }
+    });
+
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
     res.json({
-      products: result.rows.map(row => ({
-        id: row.id,
-        name: row.name,
-        category: row.category,
-        price: parseFloat(row.price),
-        unit: row.unit,
-        seller: row.seller_name,
-        location: row.location,
-        rating: parseFloat(row.product_rating) || 0,
-        reviews: parseInt(row.review_count) || 0,
-        inStock: row.in_stock,
-        image: row.image_url,
-        description: row.description,
-        priceChange: parseFloat(row.price_change) || 0
-      })),
+      products: paginatedProducts,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: parseInt(countResult.rows[0].total),
-        pages: Math.ceil(countResult.rows[0].total / limit)
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(filteredProducts.length / limit),
+        totalProducts: filteredProducts.length,
+        hasNext: endIndex < filteredProducts.length,
+        hasPrev: startIndex > 0
+      },
+      filters: {
+        category,
+        location,
+        minPrice,
+        maxPrice,
+        inStock,
+        search
       }
     });
   } catch (error) {
-    console.error('Error fetching products:', error);
-    res.status(500).json({ error: 'Failed to fetch products' });
+    res.status(500).json({ error: 'Failed to fetch products', message: error.message });
   }
 });
 
-// Get current market prices
-router.get('/prices', async (req, res) => {
+// Get single product by ID
+router.get('/products/:id', (req, res) => {
   try {
-    const query = `
-      SELECT crop_name, current_price, unit, price_change, 
-             change_percent, market_name, last_updated
-      FROM market_prices
-      WHERE last_updated >= NOW() - INTERVAL '24 hours'
-      ORDER BY last_updated DESC
-    `;
+    const product = products.find(p => p.id === req.params.id);
     
-    const result = await db.query(query);
-    
-    res.json(result.rows.map(row => ({
-      crop: row.crop_name,
-      currentPrice: parseFloat(row.current_price),
-      unit: row.unit,
-      change: parseFloat(row.price_change),
-      changePercent: parseFloat(row.change_percent),
-      market: row.market_name,
-      lastUpdated: row.last_updated
-    })));
-  } catch (error) {
-    console.error('Error fetching market prices:', error);
-    res.status(500).json({ error: 'Failed to fetch market prices' });
-  }
-});
-
-// Get market insights
-router.get('/insights', async (req, res) => {
-  try {
-    const query = `
-      SELECT crop_name, demand_trend, current_price, projected_price,
-             seasonal_factor, risk_level, best_regions, optimal_timing,
-             market_share, last_updated
-      FROM market_insights
-      ORDER BY market_share DESC
-    `;
-    
-    const result = await db.query(query);
-    
-    res.json(result.rows.map(row => ({
-      crop: row.crop_name,
-      demandTrend: row.demand_trend,
-      currentPrice: parseFloat(row.current_price),
-      projectedPrice: parseFloat(row.projected_price),
-      seasonalFactor: parseFloat(row.seasonal_factor),
-      riskLevel: row.risk_level,
-      bestRegions: row.best_regions,
-      optimalPlantingWindow: row.optimal_timing,
-      marketShare: parseFloat(row.market_share)
-    })));
-  } catch (error) {
-    console.error('Error fetching market insights:', error);
-    res.status(500).json({ error: 'Failed to fetch market insights' });
-  }
-});
-
-// Place an order
-router.post('/orders', validateOrder, async (req, res) => {
-  try {
-    const { productId, quantity, deliveryAddress, contactInfo } = req.body;
-    
-    // Check product availability
-    const productQuery = 'SELECT * FROM products WHERE id = $1 AND active = true AND in_stock = true';
-    const productResult = await db.query(productQuery, [productId]);
-    
-    if (productResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found or out of stock' });
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
     }
     
-    const product = productResult.rows[0];
-    const totalAmount = product.price * quantity;
-    
-    // Create order using transaction
-    const order = await db.transaction(async (client) => {
-      // Insert order
-      const orderQuery = `
-        INSERT INTO orders (product_id, quantity, total_amount, delivery_address, 
-                           contact_info, status, created_at)
-        VALUES ($1, $2, $3, $4, $5, 'confirmed', NOW())
-        RETURNING *
-      `;
-      
-      const orderResult = await client.query(orderQuery, [
-        productId,
-        quantity,
-        totalAmount,
-        JSON.stringify(deliveryAddress),
-        JSON.stringify(contactInfo)
-      ]);
-      
-      // Update product stock (if tracking stock)
-      if (product.stock_quantity !== null) {
-        const updateStockQuery = `
-          UPDATE products 
-          SET stock_quantity = stock_quantity - $1,
-              in_stock = CASE WHEN stock_quantity - $1 <= 0 THEN false ELSE true END
-          WHERE id = $2
-        `;
-        await client.query(updateStockQuery, [quantity, productId]);
-      }
-      
-      return orderResult.rows[0];
-    });
-    
-    res.status(201).json({
-      orderId: order.id,
-      status: order.status,
-      totalAmount: parseFloat(order.total_amount),
-      estimatedDelivery: '3-5 days',
-      trackingNumber: `TRK${order.id.toString().padStart(6, '0')}`
-    });
-    
+    res.json(product);
   } catch (error) {
-    console.error('Error placing order:', error);
-    res.status(500).json({ error: 'Failed to place order' });
+    res.status(500).json({ error: 'Failed to fetch product', message: error.message });
   }
 });
 
-// Get order history for a user
-router.get('/orders/:userId', async (req, res) => {
+// Create new product
+router.post('/products', (req, res) => {
   try {
-    const { userId } = req.params;
+    const { error, value } = productSchema.validate(req.body);
     
-    const query = `
-      SELECT o.*, p.name as product_name, p.image_url, s.name as seller_name
-      FROM orders o
-      JOIN products p ON o.product_id = p.id
-      JOIN sellers s ON p.seller_id = s.id
-      WHERE o.user_id = $1
-      ORDER BY o.created_at DESC
-    `;
+    if (error) {
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: error.details.map(d => d.message)
+      });
+    }
     
-    const result = await db.query(query, [userId]);
+    const newProduct = {
+      ...value,
+      id: `prod_${Date.now()}`,
+      dateAdded: new Date().toISOString()
+    };
     
-    res.json(result.rows.map(row => ({
-      orderId: row.id,
-      productName: row.product_name,
-      sellerName: row.seller_name,
-      quantity: row.quantity,
-      totalAmount: parseFloat(row.total_amount),
-      status: row.status,
-      orderDate: row.created_at,
-      deliveryDate: row.delivered_at,
-      trackingNumber: `TRK${row.id.toString().padStart(6, '0')}`
-    })));
-    
+    products.push(newProduct);
+    res.status(201).json(newProduct);
   } catch (error) {
-    console.error('Error fetching order history:', error);
-    res.status(500).json({ error: 'Failed to fetch order history' });
+    res.status(500).json({ error: 'Failed to create product', message: error.message });
   }
 });
 
-// Add product to favorites
-router.post('/favorites', async (req, res) => {
+// Update product
+router.put('/products/:id', (req, res) => {
   try {
-    const { userId, productId } = req.body;
+    const productIndex = products.findIndex(p => p.id === req.params.id);
     
-    const query = `
-      INSERT INTO favorites (user_id, product_id, created_at)
-      VALUES ($1, $2, NOW())
-      ON CONFLICT (user_id, product_id) DO NOTHING
-      RETURNING *
-    `;
+    if (productIndex === -1) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
     
-    const result = await db.query(query, [userId, productId]);
+    const { error, value } = productSchema.validate(req.body);
     
-    res.json({ success: true, favorite: result.rows[0] });
+    if (error) {
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: error.details.map(d => d.message)
+      });
+    }
+    
+    products[productIndex] = { ...products[productIndex], ...value };
+    res.json(products[productIndex]);
   } catch (error) {
-    console.error('Error adding to favorites:', error);
-    res.status(500).json({ error: 'Failed to add to favorites' });
+    res.status(500).json({ error: 'Failed to update product', message: error.message });
+  }
+});
+
+// Delete product
+router.delete('/products/:id', (req, res) => {
+  try {
+    const productIndex = products.findIndex(p => p.id === req.params.id);
+    
+    if (productIndex === -1) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    const deletedProduct = products.splice(productIndex, 1)[0];
+    res.json({ message: 'Product deleted successfully', product: deletedProduct });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete product', message: error.message });
+  }
+});
+
+// Get product categories
+router.get('/categories', (req, res) => {
+  try {
+    const categories = [...new Set(products.map(p => p.category))];
+    const categoryStats = categories.map(category => ({
+      name: category,
+      count: products.filter(p => p.category === category).length,
+      averagePrice: products
+        .filter(p => p.category === category)
+        .reduce((sum, p) => sum + p.price, 0) / 
+        products.filter(p => p.category === category).length
+    }));
+    
+    res.json(categoryStats);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch categories', message: error.message });
+  }
+});
+
+// Get marketplace statistics
+router.get('/stats', (req, res) => {
+  try {
+    const stats = {
+      totalProducts: products.length,
+      totalSellers: [...new Set(products.map(p => p.sellerId))].length,
+      averagePrice: products.reduce((sum, p) => sum + p.price, 0) / products.length,
+      categoriesCount: [...new Set(products.map(p => p.category))].length,
+      inStockProducts: products.filter(p => p.inStock).length,
+      outOfStockProducts: products.filter(p => !p.inStock).length,
+      topRatedProducts: products
+        .filter(p => p.rating >= 4.5)
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, 5),
+      recentProducts: products
+        .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
+        .slice(0, 10)
+    };
+    
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch marketplace stats', message: error.message });
+  }
+});
+
+// Search suggestions
+router.get('/search/suggestions', (req, res) => {
+  try {
+    const { q } = req.query;
+    
+    if (!q || q.length < 2) {
+      return res.json([]);
+    }
+    
+    const searchTerm = q.toLowerCase();
+    const suggestions = [
+      ...new Set([
+        ...products
+          .filter(p => p.name.toLowerCase().includes(searchTerm))
+          .map(p => p.name)
+          .slice(0, 5),
+        ...products
+          .filter(p => p.category.toLowerCase().includes(searchTerm))
+          .map(p => p.category)
+          .slice(0, 3)
+      ])
+    ].slice(0, 8);
+    
+    res.json(suggestions);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch suggestions', message: error.message });
   }
 });
 

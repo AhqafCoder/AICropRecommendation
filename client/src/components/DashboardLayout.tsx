@@ -70,22 +70,22 @@ export function AppSidebar() {
   const pathname = usePathname()
 
   return (
-    <Sidebar variant="inset" className="border-r border-gray-200">
-      <SidebarHeader className="border-b border-gray-200">
-        <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-600">
-            <Leaf className="h-4 w-4 text-white" />
+    <Sidebar variant="inset" className="border-r border-emerald-200 bg-gradient-to-b from-emerald-50 to-green-50">
+      <SidebarHeader className="border-b border-emerald-200 bg-white/80">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg">
+            <Leaf className="h-5 w-5 text-white" />
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">CropAI</span>
-            <span className="truncate text-xs text-gray-500">Smart Farming Platform</span>
+            <span className="truncate font-bold text-emerald-800 text-lg">CropAI</span>
+            <span className="truncate text-xs text-emerald-600">Smart Farming Platform</span>
           </div>
         </div>
       </SidebarHeader>
       
-      <SidebarContent>
+      <SidebarContent className="bg-gradient-to-b from-white to-emerald-50/50">
         <SidebarGroup>
-          <SidebarGroupLabel>Main Features</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-emerald-700 font-semibold">Main Features</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {sidebarItems.map((item) => (
@@ -93,7 +93,7 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild 
                     isActive={pathname === item.url}
-                    className="hover:bg-green-50 hover:text-green-700 data-[active=true]:bg-green-100 data-[active=true]:text-green-800"
+                    className="hover:bg-emerald-100 hover:text-emerald-800 data-[active=true]:bg-gradient-to-r data-[active=true]:from-emerald-500 data-[active=true]:to-green-600 data-[active=true]:text-white data-[active=true]:shadow-lg transition-all duration-200"
                   >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
@@ -107,7 +107,7 @@ export function AppSidebar() {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Support</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-emerald-700 font-semibold">Support</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {supportItems.map((item) => (
@@ -115,7 +115,7 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild 
                     isActive={pathname === item.url}
-                    className="hover:bg-green-50 hover:text-green-700 data-[active=true]:bg-green-100 data-[active=true]:text-green-800"
+                    className="hover:bg-emerald-100 hover:text-emerald-800 data-[active=true]:bg-gradient-to-r data-[active=true]:from-emerald-500 data-[active=true]:to-green-600 data-[active=true]:text-white data-[active=true]:shadow-lg transition-all duration-200"
                   >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
@@ -129,45 +129,45 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter>
+      <SidebarFooter className="bg-white/80 border-t border-emerald-200">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="data-[state=open]:bg-emerald-100 data-[state=open]:text-emerald-800 hover:bg-emerald-50 border border-emerald-200"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
+                  <Avatar className="h-8 w-8 rounded-lg border-2 border-emerald-300">
                     <AvatarImage src={user?.imageUrl} alt={user?.fullName || ''} />
-                    <AvatarFallback className="rounded-lg bg-green-100 text-green-700">
+                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 text-white font-semibold">
                       {user?.firstName?.charAt(0) || 'U'}
                       {user?.lastName?.charAt(0) || ''}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user?.fullName || 'User'}</span>
-                    <span className="truncate text-xs text-gray-500">{user?.primaryEmailAddress?.emailAddress}</span>
+                    <span className="truncate font-semibold text-emerald-800">{user?.fullName || 'User'}</span>
+                    <span className="truncate text-xs text-emerald-600">{user?.primaryEmailAddress?.emailAddress}</span>
                   </div>
-                  <ChevronUp className="ml-auto size-4" />
+                  <ChevronUp className="ml-auto size-4 text-emerald-600" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg border-emerald-200"
                 side="bottom"
                 align="end"
                 sideOffset={4}
               >
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/profile">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Account Settings
+                  <Link href="/dashboard/settings" className="flex items-center">
+                    <Settings className="mr-2 h-4 w-4 text-emerald-600" />
+                    <span className="text-emerald-800">Account Settings</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-emerald-200" />
                 <DropdownMenuItem asChild>
                   <SignOutButton>
-                    <div className="flex items-center cursor-pointer">
+                    <div className="flex items-center cursor-pointer text-red-600 hover:text-red-800">
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign out
                     </div>

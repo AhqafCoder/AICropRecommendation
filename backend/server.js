@@ -1,122 +1,177 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
-
-// Import routes
-const authRoutes = require('./routes/auth');
-const cropRoutes = require('./routes/crops');
-const marketplaceRoutes = require('./routes/marketplace');
-const analyticsRoutes = require('./routes/analytics');
-const userRoutes = require('./routes/users');
-
-// Import middleware
-const { errorHandler } = require('./middleware/errorHandler');
-const { authenticateToken } = require('./middleware/auth');
-
-// Import database
-const db = require('./config/mockDatabase'); // Using mock database for now
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security middleware
-app.use(helmet());
-app.use(compression());
-
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: 'Too many requests from this IP, please try again later.'
 });
-app.use('/api/', limiter);
 
-// CORS configuration
+// Middleware
+app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3001',
-  credentials: true,
-  optionsSuccessStatus: 200
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true
 }));
-
-// Body parsing middleware
+app.use(compression());
+app.use(morgan('combined'));
+app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging middleware
-app.use(morgan('combined'));
+// Import routes
+const dashboardRoutes = require('./routes/dashboard');
+const marketplaceRoutes = require('./routes/marketplace');
+
+// Use routes
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    version: '1.0.0'
+    version: '2.0.0',
+    service: 'CropAI Backend'
   });
 });
 
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/crops', cropRoutes);
-app.use('/api/marketplace', marketplaceRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/users', authenticateToken, userRoutes);
-
-// Root endpoint
+// Basic API endpoints
 app.get('/', (req, res) => {
   res.json({
-    message: 'CropAI Backend API',
-    version: '1.0.0',
-    endpoints: {
-      health: '/health',
-      auth: '/api/auth',
-      crops: '/api/crops',
-      marketplace: '/api/marketplace',
-      analytics: '/api/analytics',
-      users: '/api/users'
-    },
-    documentation: '/api/docs'
+    message: 'CropAI Express.js Backend API',
+    version: '2.0.0',
+    description: 'Comprehensive agricultural marketplace and analytics API',
+    status: 'running'
   });
 });
 
-// Error handling middleware (must be last)
-app.use(errorHandler);
-
-// Start server
-const startServer = async () => {
+// Dashboard stats endpoint
+app.get('/api/dashboard/stats', (req, res) => {
   try {
-    // Test database connection
-    await db.testConnection();
-    console.log('✅ Database connected successfully');
-    
-    app.listen(PORT, () => {
-      console.log(`🚀 CropAI Backend Server running on port ${PORT}`);
-      console.log(`🌐 Health check: http://localhost:${PORT}/health`);
-      console.log(`📚 API docs: http://localhost:${PORT}/api/docs`);
-      console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+    const stats = [
+      {
+        title: 'Total Revenue',
+        value: '₹12,56,670',
+        change: '+18.2%',
+        trend: 'up',
+        icon: 'dollar-sign',
+        color: 'green',
+        period: 'This month'
+      },
+      {
+        title: 'Active Crops',
+        value: '2,340',
+        change: '+12.5%',
+        trend: 'up',
+        icon: 'leaf',
+        color: 'emerald',
+        period: 'Current season'
+      },
+      {
+        title: 'Healthy Crops',
+        value: '87.5%',
+        change: '+5.1%',
+        trend: 'up',
+        icon: 'shield-check',
+        color: 'blue',
+        period: 'Real-time'
+      },
+      {
+        title: 'Disease Alerts',
+        value: '12',
+        change: '-25%',
+        trend: 'down',
+        icon: 'alert-circle',
+        color: 'orange',
+        period: 'Last 7 days'
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: stats,
+      generatedAt: new Date().toISOString()
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error.message);
-    process.exit(1);
+    res.status(500).json({ 
+      error: 'Failed to fetch dashboard stats', 
+      message: error.message 
+    });
   }
-};
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  process.exit(0);
 });
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  process.exit(0);
+// Analytics endpoint
+app.get('/api/analytics/dashboard', (req, res) => {
+  try {
+    const analyticsData = {
+      cropYield: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        data: [2400, 2100, 2800, 3200, 2900, 3400]
+      },
+      revenue: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        data: [125000, 134000, 145000, 167000, 156000, 189000]
+      },
+      cropHealth: {
+        healthy: 87.5,
+        diseased: 8.2,
+        pending: 4.3
+      },
+      monthlyStats: {
+        totalRevenue: 1250000,
+        totalCrops: 2340,
+        healthyCrops: 87.5,
+        diseaseAlerts: 12
+      }
+    };
+    
+    res.json({
+      success: true,
+      data: analyticsData,
+      generatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Failed to fetch analytics data', 
+      message: error.message 
+    });
+  }
 });
 
-startServer();
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    error: 'Something went wrong!',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: 'Route not found',
+    message: `The route ${req.originalUrl} does not exist on this server.`
+  });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 CropAI Backend Server running on port ${PORT}`);
+  console.log(`📊 Analytics API: http://localhost:${PORT}/api/analytics`);
+  console.log(`📈 Dashboard API: http://localhost:${PORT}/api/dashboard`);
+  console.log(`💚 Health Check: http://localhost:${PORT}/health`);
+});
 
 module.exports = app;
