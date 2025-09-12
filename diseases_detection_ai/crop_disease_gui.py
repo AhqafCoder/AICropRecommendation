@@ -81,17 +81,23 @@ class CropDiseaseGUI:
         ]
         self.current_step = 0
         
-        # Load model and components
-        self.load_model_async()
+        # Load disease info first
         self.load_disease_info()
         
         # Create GUI
         self.create_widgets()
         
+        # Load model after GUI is created (delayed start)
+        self.root.after(100, self.load_model_async)
+        
     def load_model_async(self):
         """Load model in background thread"""
         def load_model():
             try:
+                # Check if GUI components are initialized
+                if not hasattr(self, 'status_label') or not self.status_label:
+                    return
+                    
                 if not TORCH_AVAILABLE:
                     self.root.after(0, lambda: self.status_label.config(
                         text="❌ PyTorch not available - Model functionality disabled", 
@@ -116,38 +122,36 @@ class CropDiseaseGUI:
                     print(f"Warning: Grad-CAM not available: {e}")
                     GRADCAM_AVAILABLE = False
                 
-                # Class names
+                # Class names (updated for V3 model: Pepper, Potato, Tomato)
                 self.class_names = [
-                    'Corn___Cercospora_leaf_spot_Gray_leaf_spot',
-                    'Corn___Common_rust',
-                    'Corn___healthy',
-                    'Corn___Northern_Leaf_Blight',
-                    'Potato___Early_Blight',
+                    'Pepper__bell___Bacterial_spot',
+                    'Pepper__bell___healthy',
+                    'Potato___Early_blight',
                     'Potato___healthy',
-                    'Potato___Late_Blight',
-                    'Tomato___Bacterial_spot',
-                    'Tomato___Early_blight',
-                    'Tomato___healthy',
-                    'Tomato___Late_blight',
-                    'Tomato___Leaf_Mold',
-                    'Tomato___Septoria_leaf_spot',
-                    'Tomato___Spider_mites_Two_spotted_spider_mite',
-                    'Tomato___Target_Spot',
-                    'Tomato___Tomato_mosaic_virus',
-                    'Tomato___Tomato_Yellow_Leaf_Curl_Virus'
+                    'Potato___Late_blight',
+                    'Tomato__Target_Spot',
+                    'Tomato__Tomato_mosaic_virus',
+                    'Tomato__Tomato_YellowLeaf__Curl_Virus',
+                    'Tomato_Bacterial_spot',
+                    'Tomato_Early_blight',
+                    'Tomato_healthy',
+                    'Tomato_Late_blight',
+                    'Tomato_Leaf_Mold',
+                    'Tomato_Septoria_leaf_spot',
+                    'Tomato_Spider_mites_Two_spotted_spider_mite'
                 ]
                 
                 self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                 
                 # Load the specified model
-                model_path = 'models/crop_disease_v2_model.pth'
+                model_path = 'models/crop_disease_v3_model.pth'
                 
                 if os.path.exists(model_path):
                     try:
                         self.model = CropDiseaseResNet50(num_classes=len(self.class_names), pretrained=False)
                         checkpoint = torch.load(model_path, map_location=self.device)
                         
-                        # Handle checkpoint format from crop_disease_v2_model.pth
+                        # Handle checkpoint format from crop_disease_v3_model.pth
                         if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
                             state_dict = checkpoint['model_state_dict']
                             # Also load class names from checkpoint if available
@@ -174,32 +178,38 @@ class CropDiseaseGUI:
                             status_msg = f"✅ Model loaded from {os.path.basename(model_path)} (Grad-CAM unavailable)"
                         
                         # Update status
-                        self.root.after(0, lambda: self.status_label.config(
-                            text=status_msg, 
-                            fg='green'
-                        ))
+                        if hasattr(self, 'status_label') and self.status_label:
+                            self.root.after(0, lambda: self.status_label.config(
+                                text=status_msg, 
+                                fg='green'
+                            ))
                         
                     except Exception as e:
                         error_msg = f"❌ Error loading model: {str(e)}"
+                        if hasattr(self, 'status_label') and self.status_label:
+                            self.root.after(0, lambda: self.status_label.config(
+                                text=error_msg, 
+                                fg='red'
+                            ))
+                else:
+                    error_msg = f"❌ Model file not found: {model_path}"
+                    if hasattr(self, 'status_label') and self.status_label:
                         self.root.after(0, lambda: self.status_label.config(
                             text=error_msg, 
                             fg='red'
                         ))
-                else:
-                    error_msg = f"❌ Model file not found: {model_path}"
-                    self.root.after(0, lambda: self.status_label.config(
-                        text=error_msg, 
-                        fg='red'
-                    ))
                 
                 # Enable predict button
-                self.root.after(0, lambda: self.predict_button.config(state='normal'))
+                if hasattr(self, 'predict_button') and self.predict_button:
+                    self.root.after(0, lambda: self.predict_button.config(state='normal'))
                 
             except Exception as e:
-                self.root.after(0, lambda: self.status_label.config(
-                    text=f"❌ Error loading model: {str(e)}", 
-                    fg='red'
-                ))
+                # Check if GUI components are initialized before updating
+                if hasattr(self, 'status_label') and self.status_label:
+                    self.root.after(0, lambda: self.status_label.config(
+                        text=f"❌ Error loading model: {str(e)}", 
+                        fg='red'
+                    ))
         
         # Start loading in background
         threading.Thread(target=load_model, daemon=True).start()
@@ -258,8 +268,10 @@ class CropDiseaseGUI:
             with open('knowledge_base/disease_info.json', 'r') as f:
                 kb_data = json.load(f)
                 for disease in kb_data['diseases']:
-                    key = f"{disease['crop']}___{disease['disease']}"
-                    self.disease_info[key] = disease
+                    # Use the class_name field directly as the key
+                    class_name = disease.get('class_name')
+                    if class_name:
+                        self.disease_info[class_name] = disease
         except Exception as e:
             print(f"Warning: Could not load disease info: {e}")
     
@@ -784,19 +796,11 @@ class CropDiseaseGUI:
                     result_text += f"{i}. {symptom}\n"
                 result_text += "\n"
             
-            if 'treatment' in disease_info:
-                result_text += f"💊 Treatment:\n"
-                treatment = disease_info['treatment']
-                words = treatment.split()
-                wrapped_treatment = ""
-                line_length = 0
-                for word in words:
-                    if line_length + len(word) + 1 > 50:
-                        wrapped_treatment += "\n"
-                        line_length = 0
-                    wrapped_treatment += word + " "
-                    line_length += len(word) + 1
-                result_text += wrapped_treatment.strip() + "\n\n"
+            if 'solutions' in disease_info:
+                result_text += f"💊 Solutions:\n"
+                for i, solution in enumerate(disease_info['solutions'][:5], 1):  # Show first 5
+                    result_text += f"{i}. {solution}\n"
+                result_text += "\n"
                 
             if 'prevention' in disease_info:
                 result_text += f"🛡️ Prevention Tips:\n"

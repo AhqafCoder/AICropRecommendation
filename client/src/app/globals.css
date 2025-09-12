@@ -43,6 +43,70 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Custom animations for enhanced UI */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.4s ease-out;
+}
+
+/* Custom chart tooltip styles */
+.recharts-tooltip-wrapper {
+  background: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.recharts-tooltip-label {
+  color: #374151 !important;
+  font-weight: 600 !important;
+}
+
+/* Gradient background for cards */
+.gradient-card {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);

@@ -12,7 +12,7 @@ def test_gradcam():
     from src.explain import load_model_and_generate_gradcam
     
     # Define paths
-    model_path = "models/crop_disease_v2_model.pth"
+    model_path = "models/crop_disease_v3_model.pth"
     image_path = "test_leaf_sample.jpg"
     output_path = "outputs/test_gradcam.jpg"
     

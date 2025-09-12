@@ -83,7 +83,7 @@ export class AnalyticsService {
   }
 
   // Get weather forecast for a region
-  static async getWeatherForecast(region?: string): Promise<WeatherForecast[]> {
+  static async getWeatherForecast(): Promise<WeatherForecast[]> {
     const response = await this.makeRequest<{ forecasts: WeatherForecast[] }>('/analytics/weather');
     return response.forecasts;
   }
@@ -95,15 +95,16 @@ export class AnalyticsService {
   }
 
   // Get market trends analysis
-  static async getMarketTrends(timeFrame: string = '30d'): Promise<MarketTrend[]> {
+  static async getMarketTrends(): Promise<MarketTrend[]> {
     // For now, return market insights as trends since the backend provides this data
-    const response = await this.makeRequest<{ insights: any[] }>('/analytics/insights');
-    return response.insights.map((insight: any) => ({
-      crop: insight.crop,
-      trend: insight.demandTrend,
-      currentPrice: insight.currentPrice,
-      projectedPrice: insight.projectedPrice,
-      confidence: insight.confidence,
+    const response = await this.makeRequest<{ insights: Record<string, unknown>[] }>('/analytics/insights');
+    return response.insights.map((insight: Record<string, unknown>) => ({
+      crop: insight.crop as string,
+      trend: (insight.demandTrend as string) === 'increasing' ? 'up' as const : 
+             (insight.demandTrend as string) === 'decreasing' ? 'down' as const : 'stable' as const,
+      currentPrice: insight.currentPrice as number,
+      projectedPrice: insight.projectedPrice as number,
+      confidence: insight.confidence as number,
       timeFrame: '30d'
     }));
   }

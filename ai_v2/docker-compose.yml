@@ -2,16 +2,23 @@ version: '3.8'
 
 services:
   crop-ai-api:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: crop-ai-api
     ports:
       - "8000:8000"
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
+      - ENVIRONMENT=development
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
     volumes:
-      - ./models:/app/models:ro
-      - ./data:/app/data:ro
+      - ./src:/app/src
+      - ./models:/app/models
+      - ./data:/app/data
+      - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

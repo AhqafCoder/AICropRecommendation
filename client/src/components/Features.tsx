@@ -10,7 +10,6 @@ import {
   BarChart3, 
   TrendingUp,
   Leaf,
-  Search,
   Users,
   DollarSign,
   Target,

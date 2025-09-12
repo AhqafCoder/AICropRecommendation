@@ -17,7 +17,6 @@ import {
   CheckCircle,
   Clock,
   DollarSign,
-  Leaf,
   Droplets
 } from "lucide-react";
 

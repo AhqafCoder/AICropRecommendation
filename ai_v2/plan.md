@@ -287,7 +287,7 @@ pip install --upgrade pip
 - Keep `feature_list.yaml` authoritative and read it both in train and predict.
 - For SHAP: compute `explainer = shap.TreeExplainer(model)` after model load and reuse it for multiple requests; store background dataset sample to initialize KernelExplainer if needed.
 
----
+
 
 ## 15. Final checklist before handoff
 - [ ] Processed datasets saved in `data/processed/`

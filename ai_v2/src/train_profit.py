@@ -1,6 +1,7 @@
 """
 Profit estimation model training module
 Implements yield predictor + deterministic profit calculation as per plan.md step 7
+Enhanced with LightGBM for better performance
 """
 
 import pandas as pd
@@ -8,7 +9,6 @@ import numpy as np
 import os
 import json
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import lightgbm as lgb
 import joblib
@@ -187,45 +187,54 @@ def train_yield_model():
         X, y, test_size=0.2, random_state=42
     )
     
-    # Train LightGBM regressor
-    model = lgb.LGBMRegressor(
-        objective='regression',
-        n_estimators=500,
-        learning_rate=0.05,
-        num_leaves=31,
-        feature_fraction=0.9,
-        bagging_fraction=0.8,
-        bagging_freq=5,
-        random_state=42,
-        verbose=-1
-    )
+    # Train LightGBM regressor for better performance
+    train_data = lgb.Dataset(X_train, label=y_train)
+    valid_data = lgb.Dataset(X_test, label=y_test, reference=train_data)
     
-    model.fit(
-        X_train, y_train,
-        eval_set=[(X_test, y_test)],
-        callbacks=[lgb.early_stopping(50), lgb.log_evaluation(0)]
+    params = {
+        'objective': 'regression',
+        'metric': 'rmse',
+        'boosting_type': 'gbdt',
+        'num_leaves': 31,
+        'learning_rate': 0.05,
+        'feature_fraction': 0.9,
+        'bagging_fraction': 0.8,
+        'bagging_freq': 5,
+        'verbose': 0,
+        'random_state': 42
+    }
+    
+    model = lgb.train(
+        params,
+        train_data,
+        valid_sets=[valid_data],
+        num_boost_round=1000,
+        callbacks=[lgb.early_stopping(100), lgb.log_evaluation(0)]
     )
     
     # Evaluate
-    y_pred = model.predict(X_test)
+    y_pred = model.predict(X_test, num_iteration=model.best_iteration)
     
     mae = mean_absolute_error(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     r2 = r2_score(y_test, y_pred)
     
-    print(f"Yield Model Performance:")
+    print(f"Yield Model Performance (LightGBM):")
     print(f"  MAE: {mae:.2f} quintals/ha")
     print(f"  RMSE: {rmse:.2f} quintals/ha")
     print(f"  R²: {r2:.4f}")
+    print(f"  Best iteration: {model.best_iteration}")
+    
+    # Get feature importance
+    feature_importance = model.feature_importance(importance_type='gain')
+    feature_names = X.columns.tolist()
     
     metrics = {
         'mae': float(mae),
         'rmse': float(rmse),
         'r2': float(r2),
-        'feature_importance': dict(zip(
-            model.feature_name_,
-            model.feature_importances_.tolist()
-        ))
+        'best_iteration': int(model.best_iteration),
+        'feature_importance': dict(zip(feature_names, feature_importance.tolist()))
     }
     
     return model, crop_encoder, feature_cols, metrics
@@ -284,7 +293,7 @@ def calculate_profit(crop, predicted_yield, fertilizer_cost, area_ha=1.0):
 def predict_profit(crop, n, p, k, ph, temperature, humidity, rainfall, 
                   fertilizer_cost, area_ha=1.0, model=None, crop_encoder=None):
     """
-    Predict profit for given conditions
+    Predict profit for given conditions using LightGBM model
     """
     if model is None or crop_encoder is None:
         # Fallback to average yields if model not available
@@ -294,11 +303,18 @@ def predict_profit(crop, n, p, k, ph, temperature, humidity, rainfall,
         }
         predicted_yield = avg_yields.get(crop, 30)
     else:
-        # Use trained model
+        # Use trained LightGBM model
         try:
             crop_encoded = crop_encoder.transform([crop])[0] if crop in crop_encoder.classes_ else 0
             X_input = np.array([[n, p, k, ph, temperature, humidity, rainfall, fertilizer_cost, crop_encoded]])
-            predicted_yield = model.predict(X_input)[0]
+            
+            # For LightGBM models, use the predict method with best_iteration
+            if hasattr(model, 'best_iteration'):
+                predicted_yield = model.predict(X_input, num_iteration=model.best_iteration)[0]
+            else:
+                # Fallback for sklearn models
+                predicted_yield = model.predict(X_input)[0]
+                
             predicted_yield = max(0, predicted_yield)  # Ensure non-negative
         except Exception as e:
             print(f"Yield prediction failed: {e}")
