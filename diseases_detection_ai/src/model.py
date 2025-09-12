@@ -7,6 +7,9 @@ import torch.nn as nn
 import torchvision.models as models
 from torchvision.models import ResNet50_Weights
 
+# Import the lite version
+from .model_lite import CropDiseaseResNet50Lite, TinyDiseaseClassifier, create_memory_optimized_model
+
 class CropDiseaseResNet50(nn.Module):
     """ResNet50 model for crop disease classification"""
     
