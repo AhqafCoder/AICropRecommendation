@@ -1,32 +1,36 @@
-# Core ML dependencies
-torch
-torchvision
-numpy
+# Memory-optimized requirements for disease detection API
+# Designed to minimize RAM usage while maintaining functionality
 
+# Core dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
 
-# Image processing
-Pillow>=9.0.0
-opencv-python>=4.8.0
+# Image processing (lightweight versions)
+Pillow==10.1.0
+opencv-python-headless==4.8.1.78  # Headless version uses less memory
 
-# Grad-CAM visualization
-grad-cam>=1.4.8
+# Machine Learning (CPU-optimized)
+torch==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.16.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
-# Web framework and API
-fastapi>=0.104.0
-uvicorn>=0.24.0
-python-multipart>=0.0.6
+# Basic ML utilities
+numpy==1.24.3
+scikit-learn==1.3.0
 
-# Data analysis and visualization
-matplotlib>=3.7.0
-seaborn>=0.12.0
-scikit-learn>=1.3.0
+# System monitoring
+psutil==5.9.6
 
-# Utilities
-requests>=2.31.0
-pathlib2>=2.3.0
+# Optional: For explanations (install only if needed)
+# grad-cam==1.4.8
 
-# JSON handling
-pydantic>=2.0.0
+# Development and testing
+pytest==7.4.3
+requests==2.31.0
 
-# Additional support
-tqdm>=4.65.0
+# Note: Removed heavy dependencies like:
+# - matplotlib (use only for development)
+# - seaborn (not needed for API)
+# - jupyter (not needed for API)
+# - pandas (only if absolutely necessary)
+# - tensorflow (not needed with PyTorch)
