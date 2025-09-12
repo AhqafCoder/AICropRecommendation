@@ -468,8 +468,8 @@ if __name__ == "__main__":
         print("✅ All components loaded successfully!")
     else:
         print("⚠️ Some components failed to load")
-    
-    print("🌐 Starting server on http://localhost:4333")
-    print("📖 API documentation available at http://localhost:4333/docs")
 
-    uvicorn.run(app, host="localhost", port=4333)
+    print("🌐 Starting server on http://localhost:1234")
+    print("📖 API documentation available at http://localhost:1234/docs")
+
+    uvicorn.run(app, host="localhost", port=1234)
