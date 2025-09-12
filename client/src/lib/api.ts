@@ -1,5 +1,5 @@
 // API service for communicating with the AI backend for crop recommendations
-const AI_API_BASE_URL = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000';
+const AI_API_BASE_URL = '/api';
 
 export interface CropPredictionRequest {
   N: number;
@@ -31,9 +31,9 @@ export interface ProfitBreakdown {
 
 export interface PreviousCropAnalysis {
   previous_crop: string;
-  original_npk: number[];
-  adjusted_npk: number[];
-  nutrient_impact: number[];
+  original_npk: [number, number, number];
+  adjusted_npk: [number, number, number];
+  nutrient_impact: string;
 }
 
 export interface SeasonAnalysis {
@@ -47,7 +47,7 @@ export interface CropPredictionResponse {
   confidence: number;
   why: string[];
   expected_yield_t_per_acre: number;
-  yield_interval_p10_p90: number[];
+  yield_interval_p10_p90: [number, number];
   profit_breakdown: ProfitBreakdown;
   fertilizer_recommendation: FertilizerRecommendation;
   previous_crop_analysis: PreviousCropAnalysis;
@@ -103,8 +103,8 @@ export class CropAIService {
     return this.makeRequest<{ status: string; message: string }>('/health');
   }
 
-  static async getApiInfo(): Promise<any> {
-    return this.makeRequest<any>('/');
+  static async getApiInfo(): Promise<Record<string, unknown>> {
+    return this.makeRequest<Record<string, unknown>>('/');
   }
 }
 

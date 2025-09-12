@@ -67,7 +67,7 @@ export default function CropRecommendationForm() {
               Soil & Environmental Data
             </CardTitle>
             <CardDescription>
-              Enter your field's soil and environmental conditions to get AI-powered crop recommendations
+              Enter your field&apos;s soil and environmental conditions to get AI-powered crop recommendations
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -471,4 +471,4 @@ async def place_order(order_data: dict):
     }
 
 if __name__ == "__main__":
-    uvicorn.run("simple_app:app", host="localhost", port=8000, reload=True)
+    uvicorn.run("simple_app:app", host="localhost", port=8739, reload=True)
