@@ -12,7 +12,7 @@ If you want to use our AI model and platform, feel free to use.. just give the r
 ## 🚀 Live Demo & Access Points
 
 ### **🌐 Development Environment URLs**
-- **🖥️ Web Application**: http://localhost:3000 (Next.js Frontend)
+- ** 🖥️ Web Application**: http://localhost:3000 (Next.js Frontend)
   - Professional dashboard with comprehensive agricultural analytics
   - Responsive design optimized for desktop, tablet, and mobile
   - Real-time data visualization and interactive forms
