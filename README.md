@@ -1,4 +1,5 @@
-# 🌾 HackBhoomi2025 - Complete Agricultural Intellige## 🚀 Live Demo & Access Points
+# 🌾 SIH2025 - Crop Recommendation 
+## 🚀 Live Demo & Access Points
 
 ### **🌐 Development Environment URLs**
 - **🖥️ Web Application**: http://localhost:3000 (Next.js Frontend)
