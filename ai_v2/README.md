@@ -1,11 +1,11 @@
-# 🌾 Crop AI - Intelligent Agricultural Recommendation System
+# 🌾 Crop AI - Intelligent Agricultural Recommendation System v2.0
 
-A comprehensive **AI-powered crop recommendation system** that combines machine learning with agricultural domain expertise to provide farmers with optimal crop selection, fertilizer recommendations, and profitability estimates.
+A comprehensive **AI-powered crop recommendation system** that combines machine learning with agricultural domain expertise to provide farmers with optimal crop selection, fertilizer recommendations, and profitability estimates. Features an advanced **RandomForest classifier** trained on **22 crop varieties** with optimized hyperparameters for superior accuracy.
 
 ## 🎯 **Features**
 
 ### **Three AI Models**
-- **🌱 Crop Recommender** - RandomForest classifier recommending optimal crops based on soil & weather
+- **🌱 Crop Recommender** - RandomForest classifier (100 estimators, max_depth=15) trained on 22 crop varieties with soil & weather features
 - **🧪 Fertilizer Recommender** - Dynamic ML + lookup system for precise fertilizer suggestions  
 - **💰 Profit Estimator** - LightGBM regressor predicting yield and profitability
 
@@ -23,11 +23,12 @@ A comprehensive **AI-powered crop recommendation system** that combines machine 
 - **Interactive Documentation** - Swagger UI for easy API testing
 
 ### **Production Ready**
-- **FastAPI Backend** - Modern async REST API with automatic validation
+- **FastAPI Backend v2.0.0** - Modern async REST API with automatic validation
 - **Unified API** - Single function combining all three models
 - **Input Validation** - Robust error handling and data validation
 - **CORS Support** - Ready for web application integration
 - **Interactive Docs** - Automatic API documentation at `/docs`
+- **Enhanced Model Support** - Latest RandomForest crop classifier with 22 varieties
 
 ## 🌐 **API Endpoints**
 
@@ -275,9 +276,15 @@ python src/predict.py --input sample_input.json --output results.json
 
 ## 🔧 **Model Training**
 
+### **Current Model Status (Updated September 11, 2025)**
+- **Crop Model**: `crop_model_v1.pkl` (3.24 MB) - Latest RandomForest classifier
+- **Label Encoder**: `crop_label_encoder_v1.pkl` - Handles 22 crop classes
+- **Feature Scaler**: `scaler_v1.pkl` - Standardized preprocessing
+- **Training Date**: September 11, 2025 at 10:30 PM
+
 ### **Train Individual Models**
 ```bash
-# Train crop classifier (RandomForest)
+# Train crop classifier (RandomForest) - Latest version
 python src/train_crop.py
 
 # Train fertilizer recommender (Dynamic system)
@@ -288,11 +295,12 @@ python src/train_profit.py
 ```
 
 ### **Model Artifacts**
-- `models/crop_model_v1.pkl` - Trained crop classifier (RandomForest)
-- `models/label_encoders/crop_encoder.pkl` - Latest crop label encoder
-- `models/scaler_v1.pkl` - Feature scaler
+- `models/crop_model_v1.pkl` - **Latest RandomForest classifier (September 11, 2025)**
+- `models/crop_label_encoder_v1.pkl` - Crop class encoder for 22 varieties
+- `models/scaler_v1.pkl` - Feature preprocessing pipeline
+- `models/feature_list.yaml` - Core feature definitions [N, P, K, temperature, humidity, pH, rainfall]
 - `models/fertilizer_lookup_v1.json` - Fertilizer recommendation lookup
-- `models/fertilizer_eval_v1.json` - Fertilizer evaluation metrics
+- `models/fertilizer_eval_v1.json` - Fertilizer evaluation metrics (September 3, 2025)
 
 ## 🧠 **AI Architecture**
 
@@ -303,6 +311,13 @@ REST API   Pydantic         Cleaning      15+ Features    Crop/Fert/   SHAP    J
 Endpoints  Schema           Validation    NPK Balance     Profit      Analysis Response
 /docs UI   Validation       Scaling       Stress Index    Models    Fallback  with Meta
 ```
+
+### **Model Details**
+- **Crop Classifier**: RandomForestClassifier with 100 estimators, max_depth=15, min_samples_split=5
+- **Training Features**: [N, P, K, temperature, humidity, pH, rainfall] + engineered features
+- **Output Classes**: 22 supported crops (apple to watermelon)
+- **Model Version**: crop_model_v1.pkl (trained September 11, 2025)
+- **Performance**: Optimized hyperparameters with random_state=42 for reproducibility
 
 ## 📊 **Enhanced Dependencies**
 
@@ -342,10 +357,19 @@ Endpoints  Schema           Validation    NPK Balance     Profit      Analysis R
 
 ## 🎯 **Model Performance**
 
-**Crop Classifier:**
-- Algorithm: RandomForest with optimized parameters
-- Features: 7 core + engineered features
-- Evaluation: 99.5% accuracy, robust cross-validation
+**Crop Classifier (RandomForest v1):**
+- **Algorithm**: RandomForestClassifier with advanced hyperparameters
+- **Model Parameters**: 
+  - n_estimators: 100 (ensemble trees)
+  - max_depth: 15 (prevents overfitting)
+  - min_samples_split: 5, min_samples_leaf: 2
+  - max_features: 'sqrt' (feature randomness)
+  - random_state: 42 (reproducibility)
+- **Features**: 7 core environmental + engineered features
+- **Classes**: 22 supported crops (from apple to watermelon)
+- **Training Date**: September 11, 2025
+- **Model Size**: 3.24 MB (optimized for production)
+- **Evaluation**: Cross-validated with robust performance metrics
 
 **Profit Estimator:**
 - Algorithm: LightGBM Regressor with early stopping
@@ -477,7 +501,21 @@ Output: "Previous cotton depleted nutrients heavily: N-40, P-15, K-25"
 
 ## 🌱 **Crop Database**
 
-### **Supported Previous Crops (50+ crops)**
+### **Supported Crop Predictions (22 Varieties)**
+The current RandomForest model is trained to predict the following crop types:
+
+- **🍎 Fruits**: apple, banana, coconut, grapes, mango, muskmelon, orange, papaya, pomegranate, watermelon
+- **🌾 Cereals & Grains**: maize, rice  
+- **🫘 Legumes & Pulses**: blackgram, chickpea, kidneybeans, lentil, mothbeans, mungbean, pigeonpeas
+- **💰 Cash Crops**: coffee, cotton, jute
+
+### **Model Coverage**
+- **Total Classes**: 22 distinct crop varieties
+- **Prediction Range**: From traditional cereals to high-value fruits
+- **Geographic Scope**: Optimized for diverse Indian agricultural conditions
+- **Feature Requirements**: 7 core environmental parameters (N, P, K, temperature, humidity, pH, rainfall)
+
+### **Supported Previous Crops for Nutrient Impact Analysis (50+ crops)**
 - **Cereals**: wheat, rice, maize, barley, oats, millet, sorghum
 - **Legumes**: soybean, chickpea, lentil, pea, groundnut, cowpea
 - **Cash Crops**: cotton, sugarcane, tobacco, jute
@@ -592,7 +630,13 @@ For production use, retrain your ML models with the new features:
 
 ## 🚀 **Recent Updates**
 
-### **✅ FastAPI Integration**
+### **✅ Latest Model Training (September 11, 2025)**
+- **RandomForest Classifier v1** - Retrained with optimized hyperparameters
+- **22 Crop Varieties** - Comprehensive support from fruits to cash crops
+- **Enhanced Performance** - 100 estimators, max_depth=15, advanced parameter tuning
+- **Production Ready** - 3.24 MB optimized model with robust cross-validation
+
+### **✅ FastAPI Integration v2.0.0**
 - Modern REST API with automatic documentation
 - Pydantic validation for request/response
 - Interactive Swagger UI at `/docs`
@@ -615,14 +659,16 @@ For production use, retrain your ML models with the new features:
 
 ## 🎯 **Key Benefits**
 
-1. **Modern API Framework**: FastAPI with auto-documentation and validation
-2. **Advanced Explanations**: SHAP-based model interpretability
-3. **High Performance**: LightGBM for accurate profit estimation
-4. **More Accurate Predictions**: Considers soil history and seasonal factors
-5. **Regional Adaptation**: Season detection varies by geographic region
-6. **Comprehensive Database**: 50+ crops with scientifically-based nutrient impacts
-7. **Smart Defaults**: Auto-detection when information is not provided
-8. **Production Ready**: Complete error handling, CORS support, and interactive documentation
+1. **Latest RandomForest Model**: Advanced classifier with 100 estimators supporting 22 crop varieties
+2. **Modern API Framework**: FastAPI v2.0.0 with auto-documentation and validation
+3. **Advanced Explanations**: SHAP-based model interpretability
+4. **High Performance**: LightGBM for accurate profit estimation
+5. **Optimized Training**: Recent model training (Sep 11, 2025) with cross-validated hyperparameters
+6. **More Accurate Predictions**: Considers soil history and seasonal factors
+7. **Regional Adaptation**: Season detection varies by geographic region
+8. **Comprehensive Database**: 50+ crops with scientifically-based nutrient impacts
+9. **Smart Defaults**: Auto-detection when information is not provided
+10. **Production Ready**: Complete error handling, CORS support, and interactive documentation
 
 ## 📖 **Documentation**
 

@@ -469,7 +469,8 @@ if __name__ == "__main__":
     else:
         print("⚠️ Some components failed to load")
 
-    print("🌐 Starting server on http://localhost:1234")
-    print("📖 API documentation available at http://localhost:1234/docs")
+    print("🌐 Starting server on http://0.0.0.0:1234")
+    print("📖 API documentation available at http://0.0.0.0:1234/docs")
+    print("🌍 Server accessible on local network - find your IP with 'ipconfig'")
 
-    uvicorn.run(app, host="localhost", port=1234)
+    uvicorn.run(app, host="0.0.0.0", port=1234)
