@@ -1,6 +1,6 @@
 # 🌾 SIH2025 - AI Crop Recommendation For Farmers
 
-If you want to use our AI model and platform, feel free to use.. just give the repo a star and and fork also... It means alot, my internal hackthon went well but they didnt consider my team, instead people with no prototype and one who using google gimini API won the internal hackthon(HackBhoomi2025), with the dissapointment i faced, i decided to make it public and not to further participate in hackathons.
+If you want to use our AI model and platform, feel free to use.. just give the repo a star and and fork also... It means alot, my internal hackthon went well but they didnt consider my team, instead people with no prototype and one who using google gimini API won the internal hackthon(HackBhoomi2025), with the dissapointment i faced, i decided to make it public and not to further participate in hackathons(just kidding).
 
 
 **Regards,**  
