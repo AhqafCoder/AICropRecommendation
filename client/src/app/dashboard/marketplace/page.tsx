@@ -79,39 +79,11 @@ export default function MarketplacePage() {
         </Button>
       </div>
 
-      {/* Categories */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Shop by Category</CardTitle>
-          <CardDescription>Browse our extensive range of agricultural products</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {categories.map((category) => (
-              <Button
-                key={category.name}
-                variant="outline"
-                className="h-auto p-4 justify-start hover:shadow-md transition-shadow"
-              >
-                <div className={`p-2 rounded-md mr-3 ${category.color}`}>
-                  <category.icon className="h-5 w-5" />
-                </div>
-                <div className="text-left">
-                  <div className="font-medium">{category.name}</div>
-                  <div className="text-sm text-gray-500">{category.count}</div>
-                </div>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      
 
       {/* Featured Products */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Featured Products</CardTitle>
-          <CardDescription>Top-rated products recommended for you</CardDescription>
-        </CardHeader>
+      
+        
         <CardContent>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {featuredProducts.map((product) => (
@@ -148,7 +120,7 @@ export default function MarketplacePage() {
             ))}
           </div>
         </CardContent>
-      </Card>
+      
 
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-3">
