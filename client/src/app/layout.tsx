@@ -3,6 +3,21 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+// Warn at runtime when Clerk development keys are used outside of a local
+// development environment. Development keys (pk_test_*) route auth through
+// clerk.accounts.dev and expose JWT tokens in URL query parameters.
+if (
+  process.env.NODE_ENV === "production" &&
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_test_")
+) {
+  console.error(
+    "[Security] Clerk development key (pk_test_*) detected in production. " +
+      "Replace NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY with a pk_live_* key and " +
+      "CLERK_SECRET_KEY with a sk_live_* key to prevent JWT tokens from " +
+      "being exposed in URL query parameters."
+  );
+}
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
